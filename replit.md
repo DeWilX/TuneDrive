@@ -8,13 +8,19 @@ The website is fully GDPR compliant with comprehensive privacy features includin
 
 ## Recent Enhancements (January 2025)
 
-### CareEcu API Integration with Fallback System (Latest)
+### CareEcu API Integration with Fallback System - UPDATED ENDPOINTS (Latest)
+- **Updated API Endpoints**: Successfully integrated new CareEcu API endpoints provided by user
+  - Brands: `https://api.carecusoft.com/en/v1/chiptuning?key=5c78cfd1ca4ff97888f564558177b3e7`
+  - Models: `https://api.carecusoft.com/lv/v1/tuning/models/{brand_id}?key=5c78cfd1ca4ff97888f564558177b3e7`
+  - Years: `https://api.carecusoft.com/lv/v1/tuning/years/{model_id}?key=5c78cfd1ca4ff97888f564558177b3e7`
+  - Stages: `https://api.carecusoft.com/lv/v1/tuning/stages/{stage_id}?key=5c78cfd1ca4ff97888f564558177b3e7`
 - **Hybrid Data Architecture**: Successfully integrated CareEcu API (api.carecusoft.com) with fallback to comprehensive JVK Pro database
 - **Real-time Vehicle Data**: Primary data source from CareEcu API using provided credentials (API Key: 5c78cfd1ca4ff97888f564558177b3e7, Language: lv)
 - **Robust Fallback System**: Graceful fallback to static database when API is unavailable or fails authentication
 - **Complete Power Checker Integration**: Full vehicle hierarchy (brands → models → years → engines → power data) working seamlessly
 - **Professional Error Handling**: Comprehensive logging and error recovery ensures uninterrupted user experience
 - **Database Migration Completed**: Successfully migrated from Replit Agent to full Replit environment with PostgreSQL integration
+- **API Endpoint Update**: Updated all API endpoints to new structure provided by user, with automatic fallback to database when API data structure is unexpected
 
 ## Recent Enhancements (January 2025)
 

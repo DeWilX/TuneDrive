@@ -5,7 +5,8 @@ const LANG = 'lv';
 
 interface CareEcuBrand {
   id: number;
-  name: string;
+  var_title: string;
+  name?: string;
 }
 
 interface CareEcuModel {
@@ -52,19 +53,13 @@ class CareEcuApiError extends Error {
   }
 }
 
-async function apiRequest<T>(endpoint: string, body?: any): Promise<T> {
-  const url = `${API_BASE_URL}/${LANG}/v1/tuning/${endpoint}`;
-  
+async function apiRequest<T>(fullUrl: string): Promise<T> {
   try {
-    const response = await fetch(url, {
-      method: 'POST',
+    const response = await fetch(fullUrl, {
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        key: API_KEY,
-        ...body
-      })
+      }
     });
     
     if (!response.ok) {
@@ -83,8 +78,27 @@ async function apiRequest<T>(endpoint: string, body?: any): Promise<T> {
 
 export async function getBrands(): Promise<string[]> {
   try {
-    const brands = await apiRequest<CareEcuBrand[]>('brands');
-    return brands.map(brand => brand.name).sort();
+    const response = await apiRequest<any>('https://api.carecusoft.com/en/v1/chiptuning?key=5c78cfd1ca4ff97888f564558177b3e7');
+    console.log('CareEcu API brands response structure:', JSON.stringify(response).substring(0, 500));
+    
+    // Handle different possible response structures
+    let brands: CareEcuBrand[] = [];
+    if (Array.isArray(response)) {
+      brands = response.filter(item => item && typeof item === 'object' && (item.name || item.var_title));
+    } else if (response && response.data && Array.isArray(response.data)) {
+      brands = response.data.filter(item => item && typeof item === 'object' && (item.name || item.var_title));
+    } else if (response && response.brands && Array.isArray(response.brands)) {
+      brands = response.brands.filter(item => item && typeof item === 'object' && (item.name || item.var_title));
+    }
+    
+    // If no valid brands found or API returned insufficient data, throw error to use fallback
+    if (brands.length === 0) {
+      console.log('CareEcu API returned data but no valid brands found, using database fallback');
+      throw new CareEcuApiError('No valid brand data received from API');
+    }
+    
+    console.log(`Successfully fetched brands from CareEcu API: ${brands.length}`);
+    return brands.map(brand => brand.name || brand.var_title).sort();
   } catch (error) {
     console.error('Failed to fetch brands from CareEcu API:', error);
     throw new CareEcuApiError('Failed to fetch vehicle brands');
@@ -94,14 +108,14 @@ export async function getBrands(): Promise<string[]> {
 export async function getModels(brandName: string): Promise<string[]> {
   try {
     // First get all brands to find the brand ID
-    const brands = await apiRequest<CareEcuBrand[]>('brands');
-    const brand = brands.find(b => b.name.toLowerCase() === brandName.toLowerCase());
+    const brands = await apiRequest<CareEcuBrand[]>('https://api.carecusoft.com/en/v1/chiptuning?key=5c78cfd1ca4ff97888f564558177b3e7');
+    const brand = brands.find(b => (b.name || b.var_title).toLowerCase() === brandName.toLowerCase());
     
     if (!brand) {
       throw new CareEcuApiError(`Brand "${brandName}" not found`);
     }
     
-    const models = await apiRequest<CareEcuModel[]>(`models`, { brand_id: brand.id });
+    const models = await apiRequest<CareEcuModel[]>(`https://api.carecusoft.com/lv/v1/tuning/models/${brand.id}?key=5c78cfd1ca4ff97888f564558177b3e7`);
     return models.map(model => model.name).sort();
   } catch (error) {
     console.error(`Failed to fetch models for brand ${brandName}:`, error);
@@ -112,22 +126,22 @@ export async function getModels(brandName: string): Promise<string[]> {
 export async function getYears(brandName: string, modelName: string): Promise<string[]> {
   try {
     // Get brand ID
-    const brands = await apiRequest<CareEcuBrand[]>('brands');
-    const brand = brands.find(b => b.name.toLowerCase() === brandName.toLowerCase());
+    const brands = await apiRequest<CareEcuBrand[]>('https://api.carecusoft.com/en/v1/chiptuning?key=5c78cfd1ca4ff97888f564558177b3e7');
+    const brand = brands.find(b => (b.name || b.var_title).toLowerCase() === brandName.toLowerCase());
     
     if (!brand) {
       throw new CareEcuApiError(`Brand "${brandName}" not found`);
     }
     
     // Get model ID
-    const models = await apiRequest<CareEcuModel[]>(`models`, { brand_id: brand.id });
+    const models = await apiRequest<CareEcuModel[]>(`https://api.carecusoft.com/lv/v1/tuning/models/${brand.id}?key=5c78cfd1ca4ff97888f564558177b3e7`);
     const model = models.find(m => m.name.toLowerCase() === modelName.toLowerCase());
     
     if (!model) {
       throw new CareEcuApiError(`Model "${modelName}" not found for brand "${brandName}"`);
     }
     
-    const years = await apiRequest<CareEcuYear[]>(`years`, { model_id: model.id });
+    const years = await apiRequest<CareEcuYear[]>(`https://api.carecusoft.com/lv/v1/tuning/years/${model.id}?key=5c78cfd1ca4ff97888f564558177b3e7`);
     return years.map(year => year.year).sort().reverse(); // Most recent years first
   } catch (error) {
     console.error(`Failed to fetch years for ${brandName} ${modelName}:`, error);
@@ -137,32 +151,9 @@ export async function getYears(brandName: string, modelName: string): Promise<st
 
 export async function getEngines(brandName: string, modelName: string, year: string): Promise<string[]> {
   try {
-    // Get brand ID
-    const brands = await apiRequest<CareEcuBrand[]>('brands');
-    const brand = brands.find(b => b.name.toLowerCase() === brandName.toLowerCase());
-    
-    if (!brand) {
-      throw new CareEcuApiError(`Brand "${brandName}" not found`);
-    }
-    
-    // Get model ID
-    const models = await apiRequest<CareEcuModel[]>(`models`, { brand_id: brand.id });
-    const model = models.find(m => m.name.toLowerCase() === modelName.toLowerCase());
-    
-    if (!model) {
-      throw new CareEcuApiError(`Model "${modelName}" not found for brand "${brandName}"`);
-    }
-    
-    // Get year ID
-    const years = await apiRequest<CareEcuYear[]>(`years`, { model_id: model.id });
-    const yearData = years.find(y => y.year === year);
-    
-    if (!yearData) {
-      throw new CareEcuApiError(`Year "${year}" not found for ${brandName} ${modelName}`);
-    }
-    
-    const engines = await apiRequest<CareEcuEngine[]>(`engines`, { year_id: yearData.id });
-    return engines.map(engine => engine.name).sort();
+    // Note: The API structure suggests that engines/stages are accessed differently
+    // For now, this function will throw an error to use database fallback
+    throw new CareEcuApiError('Engine data structure needs clarification from API documentation');
   } catch (error) {
     console.error(`Failed to fetch engines for ${brandName} ${modelName} ${year}:`, error);
     throw error instanceof CareEcuApiError ? error : new CareEcuApiError('Failed to fetch vehicle engines');
@@ -171,63 +162,9 @@ export async function getEngines(brandName: string, modelName: string, year: str
 
 export async function getTuningData(brandName: string, modelName: string, year: string, engineName: string): Promise<TuningData> {
   try {
-    // Get brand ID
-    const brands = await apiRequest<CareEcuBrand[]>('brands');
-    const brand = brands.find(b => b.name.toLowerCase() === brandName.toLowerCase());
-    
-    if (!brand) {
-      throw new CareEcuApiError(`Brand "${brandName}" not found`);
-    }
-    
-    // Get model ID
-    const models = await apiRequest<CareEcuModel[]>(`models`, { brand_id: brand.id });
-    const model = models.find(m => m.name.toLowerCase() === modelName.toLowerCase());
-    
-    if (!model) {
-      throw new CareEcuApiError(`Model "${modelName}" not found for brand "${brandName}"`);
-    }
-    
-    // Get year ID
-    const years = await apiRequest<CareEcuYear[]>(`years`, { model_id: model.id });
-    const yearData = years.find(y => y.year === year);
-    
-    if (!yearData) {
-      throw new CareEcuApiError(`Year "${year}" not found for ${brandName} ${modelName}`);
-    }
-    
-    // Get engine ID
-    const engines = await apiRequest<CareEcuEngine[]>(`engines`, { year_id: yearData.id });
-    const engine = engines.find(e => e.name.toLowerCase() === engineName.toLowerCase());
-    
-    if (!engine) {
-      throw new CareEcuApiError(`Engine "${engineName}" not found for ${brandName} ${modelName} ${year}`);
-    }
-    
-    // Get tuning stages
-    const stages = await apiRequest<CareEcuStage[]>(`stages`, { engine_id: engine.id });
-    
-    if (stages.length === 0) {
-      throw new CareEcuApiError(`No tuning data available for ${brandName} ${modelName} ${year} ${engineName}`);
-    }
-    
-    // Find original power (usually the first stage or look for a stage with no tuning)
-    const originalStage = stages.find(s => s.hp_tuned === s.hp_original && s.nm_tuned === s.nm_original) || stages[0];
-    
-    // Find stage 1 (first tuning stage)
-    const stage1 = stages.find(s => s.name.toLowerCase().includes('stage 1') || s.name.toLowerCase().includes('eco')) || 
-                   stages.find(s => s.hp_tuned > s.hp_original) || stages[0];
-    
-    // Find stage 2 if available
-    const stage2 = stages.find(s => s.name.toLowerCase().includes('stage 2') || s.name.toLowerCase().includes('sport'));
-    
-    return {
-      originalPower: originalStage.hp_original,
-      originalTorque: originalStage.nm_original,
-      stage1Power: stage1.hp_tuned,
-      stage1Torque: stage1.nm_tuned,
-      stage2Power: stage2?.hp_tuned,
-      stage2Torque: stage2?.nm_tuned,
-    };
+    // Note: The stages endpoint requires stage_id, but we need to determine how to get stage_ids
+    // For now, this function will throw an error to use database fallback
+    throw new CareEcuApiError('Tuning data structure needs clarification from API documentation');
   } catch (error) {
     console.error(`Failed to fetch tuning data for ${brandName} ${modelName} ${year} ${engineName}:`, error);
     throw error instanceof CareEcuApiError ? error : new CareEcuApiError('Failed to fetch tuning data');
