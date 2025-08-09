@@ -26,7 +26,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { vehicleType } = req.params;
       
-      // Try CareEcu API first
+      // Try CareEcu API first (unified system for all vehicle types)
       try {
         const brands = await getBrands();
         console.log('Successfully fetched brands from CareEcu API:', brands.length);
