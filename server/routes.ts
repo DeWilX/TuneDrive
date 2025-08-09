@@ -18,15 +18,31 @@ import {
 } from "@shared/schema";
 import { login, requireAuth, type AuthRequest } from "./auth";
 import { z } from "zod";
+import { getBrands, getModels, getYears, getEngines, getTuningData } from "./careecu-api";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Vehicle data routes
+  // Hybrid vehicle data routes - CareEcu API with fallback to static database
   app.get("/api/vehicles/brands/:vehicleType", async (req, res) => {
     try {
       const { vehicleType } = req.params;
+      
+      // Try CareEcu API first
+      try {
+        const brands = await getBrands();
+        console.log('Successfully fetched brands from CareEcu API:', brands.length);
+        res.json(brands);
+        return;
+      } catch (apiError) {
+        console.warn('CareEcu API failed, falling back to static database:', apiError);
+      }
+      
+      // Fallback to static database
+      console.log(`Fetching brands from database for vehicle type: ${vehicleType}`);
       const brands = await storage.getBrandsByType(vehicleType);
+      console.log(`Successfully fetched ${brands.length} brands from database`);
       res.json(brands);
     } catch (error) {
+      console.error('Failed to fetch brands from both API and database:', error);
       res.status(500).json({ message: "Failed to fetch brands" });
     }
   });
@@ -34,9 +50,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/vehicles/models/:vehicleType/:brand", async (req, res) => {
     try {
       const { vehicleType, brand } = req.params;
+      
+      // Try CareEcu API first
+      try {
+        const models = await getModels(brand);
+        console.log(`Successfully fetched models for ${brand} from CareEcu API:`, models.length);
+        res.json(models);
+        return;
+      } catch (apiError) {
+        console.warn(`CareEcu API failed for models of ${brand}, falling back to static database:`, apiError);
+      }
+      
+      // Fallback to static database
       const models = await storage.getModelsByBrand(brand, vehicleType);
       res.json(models);
     } catch (error) {
+      console.error(`Failed to fetch models for brand ${req.params.brand}:`, error);
       res.status(500).json({ message: "Failed to fetch models" });
     }
   });
@@ -44,24 +73,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/vehicles/generations/:vehicleType/:brand/:model", async (req, res) => {
     try {
       const { vehicleType, brand, model } = req.params;
+      
+      // Try CareEcu API first
+      try {
+        const years = await getYears(brand, model);
+        console.log(`Successfully fetched years for ${brand} ${model} from CareEcu API:`, years.length);
+        res.json(years);
+        return;
+      } catch (apiError) {
+        console.warn(`CareEcu API failed for years of ${brand} ${model}, falling back to static database:`, apiError);
+      }
+      
+      // Fallback to static database
       const generations = await storage.getGenerationsByModel(brand, model, vehicleType);
       res.json(generations);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch generations" });
+      console.error(`Failed to fetch years for ${req.params.brand} ${req.params.model}:`, error);
+      res.status(500).json({ message: "Failed to fetch years" });
     }
   });
 
   app.get("/api/vehicles/engines/:vehicleType/:brand/:model/:generation", async (req, res) => {
     try {
       const { vehicleType, brand, model, generation } = req.params;
+      
+      // Try CareEcu API first
+      try {
+        const engines = await getEngines(brand, model, generation);
+        console.log(`Successfully fetched engines for ${brand} ${model} ${generation} from CareEcu API:`, engines.length);
+        res.json(engines);
+        return;
+      } catch (apiError) {
+        console.warn(`CareEcu API failed for engines of ${brand} ${model} ${generation}, falling back to static database:`, apiError);
+      }
+      
+      // Fallback to static database
       const engines = await storage.getEnginesByGeneration(brand, model, generation, vehicleType);
       res.json(engines);
     } catch (error) {
+      console.error(`Failed to fetch engines for ${req.params.brand} ${req.params.model} ${req.params.generation}:`, error);
       res.status(500).json({ message: "Failed to fetch engines" });
     }
   });
 
-  // Power data endpoint for the enhanced database structure
+  // Power data endpoint with CareEcu API and database fallback
   app.get("/api/vehicles/power/:vehicleType/:brand/:model/:generation/:engine", async (req, res) => {
     try {
       const { vehicleType, brand, model, generation, engine } = req.params;
@@ -69,6 +124,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const decodedGeneration = decodeURIComponent(generation);
       const decodedEngine = decodeURIComponent(engine);
       
+      // Try CareEcu API first
+      try {
+        const tuningData = await getTuningData(brand, model, decodedGeneration, decodedEngine);
+        console.log(`Successfully fetched power data for ${brand} ${model} ${decodedGeneration} ${decodedEngine} from CareEcu API`);
+        res.json(tuningData);
+        return;
+      } catch (apiError) {
+        console.warn(`CareEcu API failed for power data of ${brand} ${model} ${decodedGeneration} ${decodedEngine}, falling back to static database:`, apiError);
+      }
+      
+      // Fallback to static database
       const vehicle = await storage.getVehicleBySpecs(brand, model, decodedGeneration, decodedEngine, vehicleType);
       
       if (!vehicle) {
@@ -91,24 +157,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Legacy variants endpoint - not used with CareEcu API structure
   app.get("/api/vehicles/variants/:vehicleType/:brand/:model/:generation/:engine", async (req, res) => {
     try {
-      const { vehicleType, brand, model, generation, engine } = req.params;
-      const variants = await storage.getVariantsByEngine(brand, model, generation, engine, vehicleType);
-      res.json(variants);
+      // CareEcu API doesn't have variants, return empty array
+      res.json([]);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch variants" });
     }
   });
 
+  // Legacy single vehicle endpoint - not used with CareEcu API structure  
   app.get("/api/vehicles/:vehicleType/:brand/:model/:generation/:engine/:variant", async (req, res) => {
     try {
-      const { vehicleType, brand, model, generation, engine, variant } = req.params;
-      const vehicle = await storage.getVehicle(brand, model, generation, engine, variant, vehicleType);
-      if (!vehicle) {
-        return res.status(404).json({ message: "Vehicle not found" });
-      }
-      res.json(vehicle);
+      const { brand, model, generation, engine } = req.params;
+      const decodedGeneration = decodeURIComponent(generation);
+      const decodedEngine = decodeURIComponent(engine);
+      
+      const tuningData = await getTuningData(brand, model, decodedGeneration, decodedEngine);
+      res.json({
+        brand,
+        model,
+        generation: decodedGeneration,
+        engine: decodedEngine,
+        ...tuningData
+      });
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch vehicle" });
     }
