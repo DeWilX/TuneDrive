@@ -7,11 +7,15 @@ interface CareEcuBrand {
   id: number;
   var_title: string;
   name?: string;
+  is_car?: number;
+  is_truck?: number;
+  is_tractor?: number;
 }
 
 interface CareEcuModel {
   id: number;
-  name: string;
+  name?: string;
+  var_title?: string;
   brand_id: number;
 }
 
@@ -76,10 +80,9 @@ async function apiRequest<T>(fullUrl: string): Promise<T> {
   }
 }
 
-export async function getBrands(): Promise<string[]> {
+export async function getBrands(vehicleType: string): Promise<string[]> {
   try {
     const response = await apiRequest<any>('https://api.carecusoft.com/en/v1/chiptuning?key=5c78cfd1ca4ff97888f564558177b3e7');
-    console.log('CareEcu API brands response structure:', JSON.stringify(response).substring(0, 500));
     
     // Handle different possible response structures
     let brands: CareEcuBrand[] = [];
@@ -91,14 +94,28 @@ export async function getBrands(): Promise<string[]> {
       brands = response.brands.filter(item => item && typeof item === 'object' && (item.name || item.var_title));
     }
     
-    // If no valid brands found or API returned insufficient data, throw error to use fallback
-    if (brands.length === 0) {
+    // CareEcu API has unified system - all vehicle types in one endpoint
+    // Filter by vehicle type using the flags if available
+    let filteredBrands = brands;
+    if (vehicleType === 'car' && brands.some(b => b.is_car !== undefined)) {
+      filteredBrands = brands.filter(brand => brand.is_car === 1);
+    } else if (vehicleType === 'truck' && brands.some(b => b.is_truck !== undefined)) {
+      filteredBrands = brands.filter(brand => brand.is_truck === 1);
+    }
+    
+    // If filtering resulted in no brands or no flags available, use all brands
+    if (filteredBrands.length === 0) {
+      filteredBrands = brands;
+    }
+    
+    // If still no valid brands found, throw error to use database fallback
+    if (filteredBrands.length === 0) {
       console.log('CareEcu API returned data but no valid brands found, using database fallback');
       throw new CareEcuApiError('No valid brand data received from API');
     }
     
-    console.log(`Successfully fetched brands from CareEcu API: ${brands.length}`);
-    return brands.map(brand => brand.name || brand.var_title).sort();
+    console.log(`Successfully fetched ${filteredBrands.length} brands from CareEcu API for ${vehicleType}`);
+    return filteredBrands.map(brand => brand.name || brand.var_title).sort();
   } catch (error) {
     console.error('Failed to fetch brands from CareEcu API:', error);
     throw new CareEcuApiError('Failed to fetch vehicle brands');
@@ -116,7 +133,9 @@ export async function getModels(brandName: string): Promise<string[]> {
     }
     
     const models = await apiRequest<CareEcuModel[]>(`https://api.carecusoft.com/lv/v1/tuning/models/${brand.id}?key=5c78cfd1ca4ff97888f564558177b3e7`);
-    return models.map(model => model.name).sort();
+    const validModels = models.filter(model => model && (model.name || model.var_title));
+    console.log(`Successfully fetched models for ${brandName} from CareEcu API: ${validModels.length}`);
+    return validModels.map(model => model.name || model.var_title).sort();
   } catch (error) {
     console.error(`Failed to fetch models for brand ${brandName}:`, error);
     throw error instanceof CareEcuApiError ? error : new CareEcuApiError('Failed to fetch vehicle models');
@@ -135,7 +154,7 @@ export async function getYears(brandName: string, modelName: string): Promise<st
     
     // Get model ID
     const models = await apiRequest<CareEcuModel[]>(`https://api.carecusoft.com/lv/v1/tuning/models/${brand.id}?key=5c78cfd1ca4ff97888f564558177b3e7`);
-    const model = models.find(m => m.name.toLowerCase() === modelName.toLowerCase());
+    const model = models.find(m => (m.name || m.var_title)?.toLowerCase() === modelName.toLowerCase());
     
     if (!model) {
       throw new CareEcuApiError(`Model "${modelName}" not found for brand "${brandName}"`);
