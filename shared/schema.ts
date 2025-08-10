@@ -115,6 +115,20 @@ export const zboxContent = pgTable("zbox_content", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const whyChooseUsContent = pgTable("why_choose_us_content", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  translations: jsonb("translations"), // Object with language codes as keys for all fields
+  features: jsonb("features").notNull(), // array of feature objects with icon, title, description
+  workshopTitle: text("workshop_title").notNull(),
+  workshopDescription: text("workshop_description").notNull(),
+  workshopImage: text("workshop_image"),
+  workshopFeatures: jsonb("workshop_features").notNull(), // array of workshop feature strings
+  isActive: boolean("is_active").default(true),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const insertVehicleSchema = createInsertSchema(vehicles).omit({
   id: true,
 });
@@ -122,6 +136,16 @@ export const insertVehicleSchema = createInsertSchema(vehicles).omit({
 export const insertContactRequestSchema = createInsertSchema(contactRequests).omit({
   id: true,
   createdAt: true,
+});
+
+export const insertZboxContentSchema = createInsertSchema(zboxContent).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export const insertWhyChooseUsContentSchema = createInsertSchema(whyChooseUsContent).omit({
+  id: true,
+  updatedAt: true,
 });
 
 export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({
@@ -150,11 +174,6 @@ export const insertContactInfoSchema = createInsertSchema(contactInfo).omit({
 });
 
 export const insertPowerCalculatorDataSchema = createInsertSchema(powerCalculatorData).omit({
-  id: true,
-  updatedAt: true,
-});
-
-export const insertZboxContentSchema = createInsertSchema(zboxContent).omit({
   id: true,
   updatedAt: true,
 });
@@ -201,6 +220,10 @@ export type InsertServiceItem = z.infer<typeof insertServiceItemSchema>;
 export type ServiceItem = typeof serviceItems.$inferSelect;
 export type InsertContactInfo = z.infer<typeof insertContactInfoSchema>;
 export type ContactInfo = typeof contactInfo.$inferSelect;
+export type ZboxContent = typeof zboxContent.$inferSelect;
+export type InsertZboxContent = z.infer<typeof insertZboxContentSchema>;
+export type WhyChooseUsContent = typeof whyChooseUsContent.$inferSelect;
+export type InsertWhyChooseUsContent = z.infer<typeof insertWhyChooseUsContentSchema>;
 export type InsertZboxContent = z.infer<typeof insertZboxContentSchema>;
 export type ZboxContent = typeof zboxContent.$inferSelect;
 

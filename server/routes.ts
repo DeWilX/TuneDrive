@@ -15,7 +15,8 @@ import {
   insertClickEventSchema,
   insertVehicleSelectionSchema,
   insertGeoLocationSchema,
-  insertZboxContentSchema
+  insertZboxContentSchema,
+  insertWhyChooseUsContentSchema
 } from "@shared/schema";
 import { login, requireAuth, type AuthRequest } from "./auth";
 import { z } from "zod";
@@ -508,6 +509,77 @@ app.get("/api/vehicles/variants/:vehicleType/:brand/:model/:generation/:engine",
         return res.status(400).json({ message: "Invalid data", errors: error.errors });
       }
       res.status(500).json({ message: "Failed to update ZBOX content" });
+    }
+  });
+
+  // Why Choose Us content routes
+  app.get("/api/why-choose-us", async (req, res) => {
+    try {
+      const content = await storage.getWhyChooseUsContent();
+      if (!content) {
+        // Return default content if none exists
+        return res.json({
+          title: 'Why Choose ChipTuning PRO?',
+          description: 'Over 15 years of experience in professional automotive tuning with thousands of satisfied customers worldwide',
+          features: [
+            {
+              icon: 'fa-calendar-alt',
+              title: '15+ Years Experience',
+              description: 'Proven expertise in automotive performance optimization since 2008'
+            },
+            {
+              icon: 'fa-award',
+              title: 'Quality Guarantee',
+              description: 'All tuning services backed by comprehensive warranty and support'
+            },
+            {
+              icon: 'fa-tachometer-alt',
+              title: 'Dyno Testing',
+              description: 'Professional power verification on our in-house dynamometer'
+            },
+            {
+              icon: 'fa-user-cog',
+              title: 'Individual Solutions',
+              description: 'Custom tuning maps tailored to your specific vehicle and requirements'
+            }
+          ],
+          workshopTitle: 'Professional Workshop & Equipment',
+          workshopDescription: 'Our state-of-the-art facility is equipped with the latest diagnostic tools, professional dynamometer, and specialized software for all major vehicle brands.',
+          workshopFeatures: [
+            'Professional 4WD dynamometer',
+            'OEM diagnostic equipment',
+            'Climate-controlled workshop',
+            'Certified technicians',
+            'Modern automotive workshop'
+          ]
+        });
+      }
+      res.json(content);
+    } catch (error) {
+      console.error("Error fetching Why Choose Us content:", error);
+      res.status(500).json({ message: "Failed to fetch Why Choose Us content" });
+    }
+  });
+
+  app.get("/api/admin/why-choose-us", requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const content = await storage.getWhyChooseUsContent();
+      res.json(content);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch Why Choose Us content" });
+    }
+  });
+
+  app.put("/api/admin/why-choose-us", requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const validatedData = insertWhyChooseUsContentSchema.parse(req.body);
+      const content = await storage.upsertWhyChooseUsContent(validatedData);
+      res.json(content);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update Why Choose Us content" });
     }
   });
 
