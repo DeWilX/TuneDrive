@@ -84,6 +84,10 @@ export interface TuningData {
   stage1Torque: number;
   stage2Power?: number;
   stage2Torque?: number;
+  stage1PowerGain?: number;
+  stage1TorqueGain?: number;
+  stage2PowerGain?: number;
+  stage2TorqueGain?: number;
 }
 
 class CareEcuApiError extends Error {
@@ -373,10 +377,21 @@ export async function getEnginesFromYear(
     
     const engineNames = validEngines
       .map((engine) => {
-        const baseName = engine.var_alias || engine.name || engine.var_title;
-        const hp = engine.int_hp;
-        // Create unique name by combining alias/name with HP if available
-        return hp ? `${baseName} (${hp} HP)` : baseName;
+        const title = engine.var_title || engine.name;
+        const alias = engine.var_alias || "";
+        
+        // Extract HP from var_alias (e.g., "3.0-tdi-dpf-240hp" -> "240")
+        const hpMatch = alias.match(/(\d+)hp/i);
+        const hp = hpMatch ? hpMatch[1] : engine.int_hp;
+        
+        // Create readable name with proper formatting
+        if (title && hp) {
+          return `${title} (${hp} HP)`;
+        } else if (title) {
+          return title;
+        } else {
+          return alias;
+        }
       })
       .filter((name): name is string => Boolean(name))
       .sort();
@@ -482,9 +497,23 @@ export async function getTuningData(
 
     // Find the specific engine by matching the formatted name
     const engine = engines.find((e) => {
-      const baseName = e.var_alias || e.name || e.var_title;
-      const hp = e.int_hp;
-      const formattedName = hp ? `${baseName} (${hp} HP)` : baseName;
+      const title = e.var_title || e.name;
+      const alias = e.var_alias || "";
+      
+      // Extract HP from var_alias (e.g., "3.0-tdi-dpf-240hp" -> "240")
+      const hpMatch = alias.match(/(\d+)hp/i);
+      const hp = hpMatch ? hpMatch[1] : e.int_hp;
+      
+      // Create readable name with proper formatting
+      let formattedName;
+      if (title && hp) {
+        formattedName = `${title} (${hp} HP)`;
+      } else if (title) {
+        formattedName = title;
+      } else {
+        formattedName = alias;
+      }
+      
       return formattedName === engineName;
     });
 
@@ -529,6 +558,12 @@ export async function getTuningData(
     const stage2Power = stage2?.int_hp_new || undefined;
     const stage2Torque = stage2?.int_nm_new || undefined;
 
+    // Calculate percentage gains
+    const stage1PowerGain = originalPower > 0 ? Math.round(((stage1Power - originalPower) / originalPower) * 100) : 0;
+    const stage1TorqueGain = originalTorque > 0 ? Math.round(((stage1Torque - originalTorque) / originalTorque) * 100) : 0;
+    const stage2PowerGain = stage2Power && originalPower > 0 ? Math.round(((stage2Power - originalPower) / originalPower) * 100) : undefined;
+    const stage2TorqueGain = stage2Torque && originalTorque > 0 ? Math.round(((stage2Torque - originalTorque) / originalTorque) * 100) : undefined;
+
     console.log(`Successfully fetched power data for ${engineName} from CareEcu API`);
     return {
       originalPower,
@@ -537,6 +572,10 @@ export async function getTuningData(
       stage1Torque,
       stage2Power,
       stage2Torque,
+      stage1PowerGain,
+      stage1TorqueGain,
+      stage2PowerGain,
+      stage2TorqueGain,
     };
   } catch (error) {
     console.error(

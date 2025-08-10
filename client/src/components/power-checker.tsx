@@ -13,6 +13,10 @@ interface VehiclePower {
   stage1Torque: number;
   stage2Power: number;
   stage2Torque: number;
+  stage1PowerGain?: number;
+  stage1TorqueGain?: number;
+  stage2PowerGain?: number;
+  stage2TorqueGain?: number;
 }
 
 export default function PowerChecker() {
@@ -239,30 +243,32 @@ export default function PowerChecker() {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-accent-400">
-                        +{powerData.stage1Power - powerData.originalPower} HP
+                        +{powerData.stage1Power - powerData.originalPower} HP ({powerData.stage1PowerGain}%)
                       </span>
                       <span className="text-accent-400">
-                        +{powerData.stage1Torque - powerData.originalTorque} Nm
+                        +{powerData.stage1Torque - powerData.originalTorque} Nm ({powerData.stage1TorqueGain}%)
                       </span>
                     </div>
                   </div>
 
                   {/* Stage 2 */}
-                  <div className="bg-green-500/10 rounded-lg p-4 border border-green-500/20">
-                    <h4 className="font-semibold text-green-400 mb-2">{t.powerChecker.stage2Power}</h4>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-gray-300">{powerData.stage2Power} HP</span>
-                      <span className="text-gray-300">{powerData.stage2Torque} Nm</span>
+                  {powerData.stage2Power && (
+                    <div className="bg-green-500/10 rounded-lg p-4 border border-green-500/20">
+                      <h4 className="font-semibold text-green-400 mb-2">{t.powerChecker.stage2Power}</h4>
+                      <div className="flex justify-between mb-2">
+                        <span className="text-gray-300">{powerData.stage2Power} HP</span>
+                        <span className="text-gray-300">{powerData.stage2Torque} Nm</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-green-400">
+                          +{powerData.stage2Power - powerData.originalPower} HP ({powerData.stage2PowerGain}%)
+                        </span>
+                        <span className="text-green-400">
+                          +{powerData.stage2Torque - powerData.originalTorque} Nm ({powerData.stage2TorqueGain}%)
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-green-400">
-                        +{powerData.stage2Power - powerData.originalPower} HP
-                      </span>
-                      <span className="text-green-400">
-                        +{powerData.stage2Torque - powerData.originalTorque} Nm
-                      </span>
-                    </div>
-                  </div>
+                  )}
 
                   {/* Get Quote Button */}
                   <Button
