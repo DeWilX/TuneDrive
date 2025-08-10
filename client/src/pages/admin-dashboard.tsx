@@ -8,7 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import PageEditor from "@/components/admin/page-editor";
 import VisualContentEditor from "@/components/admin/visual-content-editor";
 import NavigationManager from "@/components/admin/navigation-manager";
-import DragDropNavigation from "@/components/admin/drag-drop-navigation";
+import MultilingualNavigation from "@/components/admin/multilingual-navigation";
 import ServicesManager from "@/components/admin/services-manager";
 import ContactManager from "@/components/admin/contact-manager";
 import VehicleManager from "@/components/admin/vehicle-manager";
@@ -197,7 +197,7 @@ export default function AdminDashboard() {
         </Card>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="bg-gray-800 border-gray-700 grid grid-cols-2 md:grid-cols-5 lg:grid-cols-6 gap-1 h-auto p-1">
+          <TabsList className="bg-gray-800 border-gray-700 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-1 h-auto p-1">
             <TabsTrigger value="overview" className="data-[state=active]:bg-accent-500 text-xs md:text-sm p-2">
               <i className="fas fa-chart-pie mr-1 md:mr-2"></i>
               <span className="hidden sm:inline">Dashboard</span>
@@ -218,35 +218,20 @@ export default function AdminDashboard() {
               <span className="hidden sm:inline">Services</span>
               <span className="sm:hidden">Services</span>
             </TabsTrigger>
-            <TabsTrigger value="vehicles" className="data-[state=active]:bg-accent-500 text-xs md:text-sm p-2">
-              <i className="fas fa-car mr-1 md:mr-2"></i>
-              <span className="hidden sm:inline">Vehicles</span>
-              <span className="sm:hidden">Cars</span>
+            <TabsTrigger value="navigation" className="data-[state=active]:bg-accent-500 text-xs md:text-sm p-2">
+              <i className="fas fa-compass mr-1 md:mr-2"></i>
+              <span className="hidden sm:inline">Menu</span>
+              <span className="sm:hidden">Menu</span>
             </TabsTrigger>
             <TabsTrigger value="contact" className="data-[state=active]:bg-accent-500 text-xs md:text-sm p-2">
               <i className="fas fa-phone mr-1 md:mr-2"></i>
               <span className="hidden sm:inline">Contact</span>
               <span className="sm:hidden">Contact</span>
             </TabsTrigger>
-            <TabsTrigger value="navigation" className="data-[state=active]:bg-accent-500 text-xs md:text-sm p-2">
-              <i className="fas fa-compass mr-1 md:mr-2"></i>
-              <span className="hidden sm:inline">Menu</span>
-              <span className="sm:hidden">Menu</span>
-            </TabsTrigger>
             <TabsTrigger value="site-identity" className="data-[state=active]:bg-accent-500 text-xs md:text-sm p-2">
               <i className="fas fa-palette mr-1 md:mr-2"></i>
               <span className="hidden sm:inline">Design</span>
               <span className="sm:hidden">Design</span>
-            </TabsTrigger>
-            <TabsTrigger value="languages" className="data-[state=active]:bg-accent-500 text-xs md:text-sm p-2">
-              <i className="fas fa-globe mr-1 md:mr-2"></i>
-              <span className="hidden sm:inline">Languages</span>
-              <span className="sm:hidden">Lang</span>
-            </TabsTrigger>
-            <TabsTrigger value="users" className="data-[state=active]:bg-accent-500 text-xs md:text-sm p-2">
-              <i className="fas fa-users mr-1 md:mr-2"></i>
-              <span className="hidden sm:inline">Users</span>
-              <span className="sm:hidden">Users</span>
             </TabsTrigger>
           </TabsList>
 
@@ -361,21 +346,7 @@ export default function AdminDashboard() {
                     <div className="text-xs text-gray-400">New offering</div>
                   </div>
                 </Button>
-                <Button 
-                  onClick={() => {
-                    // Find vehicles tab and switch to it
-                    const vehiclesTab = document.querySelector('[value="vehicles"]') as HTMLElement;
-                    if (vehiclesTab) vehiclesTab.click();
-                  }}
-                  variant="outline"
-                  className="border-gray-600 hover:border-orange-400 hover:bg-orange-500/10 h-20 flex flex-col gap-2"
-                >
-                  <i className="fas fa-car text-lg"></i>
-                  <div>
-                    <div className="font-medium">Add Vehicle</div>
-                    <div className="text-xs text-gray-400">Car specs</div>
-                  </div>
-                </Button>
+
               </CardContent>
             </Card>
           </TabsContent>
@@ -393,7 +364,15 @@ export default function AdminDashboard() {
               <h2 className="text-2xl font-bold text-white mb-2">Navigation Menu</h2>
               <p className="text-gray-400">Drag and drop to reorder menu items. Create a navigation that guides visitors through your website.</p>
             </div>
-            <DragDropNavigation token={token || ''} />
+            <MultilingualNavigation token={token || ''} />
+          </TabsContent>
+
+          <TabsContent value="contact" className="space-y-6">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-white mb-2">Contact Information</h2>
+              <p className="text-gray-400">Manage your contact details and business information displayed on your website.</p>
+            </div>
+            <ContactManager token={token || ''} />
           </TabsContent>
 
           <TabsContent value="services" className="space-y-6">
@@ -410,22 +389,6 @@ export default function AdminDashboard() {
               <p className="text-gray-400">Update your business contact details - phone numbers, email, address, and WhatsApp. This information appears on your contact page.</p>
             </div>
             <ContactManager token={token || ''} />
-          </TabsContent>
-
-          <TabsContent value="vehicles" className="space-y-6">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-white mb-2">Vehicle Database</h2>
-              <p className="text-gray-400">Manage car specifications and tuning data. Add vehicles with their original power and potential power gains after tuning.</p>
-            </div>
-            <VehicleManager token={token || ''} />
-          </TabsContent>
-
-          <TabsContent value="languages" className="space-y-6">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-white mb-2">Multiple Languages</h2>
-              <p className="text-gray-400">Add translations for your website to serve customers in different languages. Manage text in various languages.</p>
-            </div>
-            <LanguageManager token={token || ''} />
           </TabsContent>
 
           <TabsContent value="users" className="space-y-6">
