@@ -4,14 +4,26 @@ import { useAnalytics } from "@/hooks/useAnalytics";
 import { useLanguage } from "@/hooks/useLanguage";
 
 // Helper function to get translated content
-const getTranslatedContent = (service: any, currentLanguage: string) => {
+const getTranslatedContent = (service: any, language: string) => {
   const translations = service.translations || {};
-  const translation = translations[currentLanguage];
+  const translation = translations[language];
+  
+  // Debug: show which translations are available
+  if (Object.keys(translations).length > 0) {
+    console.log('✅ Service has translations:', service.title, 'Language:', language, 'Available:', Object.keys(translations));
+    if (translation) {
+      console.log('  ✅ Using translation:', translation);
+    } else {
+      console.log('  ❌ No translation for current language, using default');
+    }
+  }
   
   return {
     title: translation?.title || service.title,
     description: translation?.description || service.description,
-    features: translation?.features?.length > 0 ? translation.features : service.features,
+    features: (translation?.features && Array.isArray(translation.features) && translation.features.length > 0) 
+      ? translation.features 
+      : service.features,
     price: translation?.price || service.price
   };
 };
@@ -100,7 +112,7 @@ const defaultServices = [
 
 export default function Services() {
   const { trackClick } = useAnalytics();
-  const { t, currentLanguage } = useLanguage();
+  const { t, language } = useLanguage();
 
   // Fetch services from admin panel
   const { data: servicesData = [] } = useQuery({
@@ -117,7 +129,7 @@ export default function Services() {
     ? servicesData
         .sort((a: any, b: any) => (a.order || 0) - (b.order || 0)) // Sort by order
         .map((service: any) => {
-          const translatedContent = getTranslatedContent(service, currentLanguage);
+          const translatedContent = getTranslatedContent(service, language);
           return {
             title: translatedContent.title,
             icon: service.icon || 'fa-cog',
