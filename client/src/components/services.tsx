@@ -100,9 +100,8 @@ export default function Services() {
   });
 
   // Transform admin data to match expected structure, fallback to default
-  const services = (servicesData as any[]).length > 0 
-    ? (servicesData as any[])
-        .filter((service: any) => service.isActive !== false) // Only show active services
+  const services = Array.isArray(servicesData) && servicesData.length > 0 
+    ? servicesData
         .sort((a: any, b: any) => (a.order || 0) - (b.order || 0)) // Sort by order
         .map((service: any) => ({
           title: service.title,
