@@ -9,6 +9,7 @@ import { AdminProvider } from "@/hooks/useAdmin";
 import LanguageProvider from "@/components/language-provider";
 import DynamicStyles from "@/components/dynamic-styles";
 import Home from "@/pages/home";
+import Contact from "@/pages/contact";
 import AdminLogin from "@/pages/admin-login";
 import AdminDashboard from "@/pages/admin-dashboard";
 import PrivacyPolicy from "@/components/gdpr/privacy-policy";
@@ -23,6 +24,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/contact" component={Contact} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/:section" component={AdminDashboard} />
