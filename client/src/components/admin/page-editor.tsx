@@ -377,9 +377,9 @@ export default function PageEditor({ token }: PageEditorProps) {
                     <p className="text-sm text-gray-400 mb-2">
                       URL: /{page.pageName}
                     </p>
-                    {page.metaDescription && (
+                    {page.content?.metaDescription && (
                       <p className="text-sm text-gray-500 mb-2">
-                        {page.metaDescription}
+                        {page.content.metaDescription}
                       </p>
                     )}
                     <div className="text-xs text-gray-600">
