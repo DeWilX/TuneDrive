@@ -274,11 +274,10 @@ export default function PowerChecker() {
                       </div>
                       <div className="text-3xl font-bold text-white mb-1">{powerData.stage1Power}<span className="text-lg font-normal text-gray-300">HP</span></div>
                       <div className="text-2xl font-semibold text-gray-300 mb-3">{powerData.stage1Torque}<span className="text-lg font-normal text-gray-400">NM</span></div>
-                      <div className="flex justify-center space-x-6 text-sm mb-3">
+                      <div className="flex justify-center space-x-6 text-sm">
                         <span className="text-red-400 font-bold">+{powerData.stage1Power - powerData.originalPower} HP</span>
                         <span className="text-red-400 font-bold">+{powerData.stage1Torque - powerData.originalTorque} NM</span>
                       </div>
-                      <div className="text-right text-sm text-gray-400 font-semibold">€300</div>
                     </div>
 
                     {/* Stage 2 Card */}
@@ -294,11 +293,10 @@ export default function PowerChecker() {
                         </div>
                         <div className="text-3xl font-bold text-white mb-1">{powerData.stage2Power}<span className="text-lg font-normal text-gray-300">HP</span></div>
                         <div className="text-2xl font-semibold text-gray-300 mb-3">{powerData.stage2Torque}<span className="text-lg font-normal text-gray-400">NM</span></div>
-                        <div className="flex justify-center space-x-6 text-sm mb-3">
+                        <div className="flex justify-center space-x-6 text-sm">
                           <span className="text-red-400 font-bold">+{powerData.stage2Power - powerData.originalPower} HP</span>
                           <span className="text-red-400 font-bold">+{powerData.stage2Torque - powerData.originalTorque} NM</span>
                         </div>
-                        <div className="text-right text-sm text-gray-400 font-semibold">€400</div>
                       </div>
                     )}
                   </div>
