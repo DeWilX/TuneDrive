@@ -73,6 +73,11 @@
   --primary-foreground: hsl(222 84% 4.9%);
   --secondary: hsl(217 32% 17%);
   --secondary-foreground: hsl(210 40% 98%);
+  
+  /* Dynamic colors that can be overridden by site identity */
+  --accent-400: #ffa500;
+  --accent-500: #ff8c00;
+  --accent-600: #e67e00;
   --muted: hsl(217 32% 17%);
   --muted-foreground: hsl(215 20% 65%);
   --accent: hsl(24 100% 50%);

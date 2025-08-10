@@ -94,9 +94,14 @@ export default function Services() {
     queryKey: ['/api/services'],
   });
 
+  // Fetch page content for services section
+  const { data: pageContent = [] } = useQuery({
+    queryKey: ['/api/page-content'],
+  });
+
   // Transform admin data to match expected structure, fallback to default
-  const services = servicesData.length > 0 
-    ? servicesData.map((service: any) => ({
+  const services = (servicesData as any[]).length > 0 
+    ? (servicesData as any[]).map((service: any) => ({
         title: service.title,
         icon: service.icon || 'fa-cog',
         image: service.image || 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3',
@@ -105,6 +110,11 @@ export default function Services() {
         price: service.price || 'Contact for price'
       }))
     : defaultServices;
+
+  // Get services section content
+  const servicesContent = (pageContent as any[])?.find((content: any) => content.section === 'services') || {};
+  const servicesTitle = servicesContent.title || t.services.title;
+  const servicesSubtitle = servicesContent.subtitle || t.services.subtitle;
 
   const handleServiceClick = (serviceName: string) => {
     trackClick('service-card', serviceName);
@@ -115,15 +125,15 @@ export default function Services() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-100 mb-4">
-            {t.services.title}
+            {servicesTitle}
           </h2>
           <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-            {t.services.subtitle}
+            {servicesSubtitle}
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {services.map((service, index) => (
+          {services.map((service: any, index: number) => (
             <Card 
               key={index}
               className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-all duration-300 group overflow-hidden cursor-pointer"
@@ -152,7 +162,7 @@ export default function Services() {
                   </p>
                   
                   <ul className="text-gray-300 text-sm space-y-1 mb-4">
-                    {service.features.map((feature, featureIndex) => (
+                    {service.features.map((feature: string, featureIndex: number) => (
                       <li key={featureIndex}>• {feature}</li>
                     ))}
                   </ul>

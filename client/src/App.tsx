@@ -7,6 +7,7 @@ import { useGDPR } from "@/hooks/useGDPR";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AdminProvider } from "@/hooks/useAdmin";
 import LanguageProvider from "@/components/language-provider";
+import DynamicStyles from "@/components/dynamic-styles";
 import Home from "@/pages/home";
 import AdminLogin from "@/pages/admin-login";
 import AdminDashboard from "@/pages/admin-dashboard";
@@ -41,6 +42,7 @@ function App() {
       <LanguageProvider>
         <AdminProvider>
           <TooltipProvider>
+            <DynamicStyles />
             <Toaster />
             <Router />
             

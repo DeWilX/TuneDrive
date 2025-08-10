@@ -17,10 +17,16 @@ export default function Hero() {
     queryKey: ['/api/site-identity'],
   });
 
-  const heroContent = (pageContent as any[])?.find((content: any) => content.section === 'hero') || {
-    title: 'Professional<br /><span class="text-accent-500">ECU Tuning</span><br />& Performance Enhancement',
-    content: 'Unlock your vehicle\'s true potential with our advanced chiptuning solutions. Over 15 years of experience in automotive performance optimization.'
-  };
+  const heroContent = (pageContent as any[])?.find((content: any) => content.section === 'hero') || {};
+  
+  // Use site identity data for hero text if no page content exists
+  const heroTitle = (siteIdentity as any)?.heroTitle || 
+    heroContent.title || 
+    'Professional<br /><span class="text-accent-500">ECU Tuning</span><br />& Performance Enhancement';
+  
+  const heroSubtitle = (siteIdentity as any)?.heroSubtitle || 
+    heroContent.content ||
+    'Unlock your vehicle\'s true potential with our advanced chiptuning solutions. Over 15 years of experience in automotive performance optimization.';
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
@@ -42,10 +48,10 @@ export default function Hero() {
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16">
         <div className="max-w-3xl animate-fade-in-up">
           <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6 text-gray-100">
-            <div dangerouslySetInnerHTML={{ __html: heroContent.title }} />
+            <div dangerouslySetInnerHTML={{ __html: heroTitle }} />
           </h1>
           <div className="text-xl text-gray-300 mb-8 leading-relaxed">
-            <div dangerouslySetInnerHTML={{ __html: heroContent.content }} />
+            <div dangerouslySetInnerHTML={{ __html: heroSubtitle }} />
           </div>
           
           {/* Stats */}
