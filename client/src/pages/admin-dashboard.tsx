@@ -21,7 +21,7 @@ import AnalyticsDashboard from "@/components/admin/analytics-dashboard";
 import HelpPanel from "@/components/admin/help-panel";
 import ZboxManagement from "@/components/admin/zbox-management";
 import WhyChooseUsManagement from "@/components/admin/why-choose-us-management";
-import ContactManagement from "@/components/admin/contact-management";
+import { ContactManagement } from "@/components/admin/contact-management";
 
 export default function AdminDashboard() {
   const { user, logout, isAuthenticated, token } = useAdmin();
@@ -202,7 +202,7 @@ export default function AdminDashboard() {
         </Card>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="bg-gray-800 border-gray-700 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-9 gap-1 h-auto p-1 w-full">
+          <TabsList className="bg-gray-800 border-gray-700 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-9 gap-1 h-auto p-1">
             <TabsTrigger value="overview" className="data-[state=active]:bg-accent-500 text-xs md:text-sm p-2">
               <i className="fas fa-chart-pie mr-1 md:mr-2"></i>
               <span className="hidden sm:inline">Dashboard</span>

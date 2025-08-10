@@ -89,52 +89,14 @@ export const globalContactInfo = pgTable("global_contact_info", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Contact Section Content - Following "Why Choose Us" pattern
-export const contactContent = pgTable("contact_content", {
+// Contact Page Content Management
+export const contactPageContent = pgTable("contact_page_content", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  title: text("title").notNull().default("Sazinieties ar mums"),
-  description: text("description").notNull().default("Saņemiet profesionālu konsultāciju un bezmaksas piedāvājumu"),
-  formTitle: text("form_title").notNull().default("Pieprasīt piedāvājumu"),
-  formDescription: text("form_description").notNull().default("Aizpildiet formu zemāk un mēs sazināsimies ar jums 24 stundu laikā"),
-  translations: jsonb("translations").$type<{
-    lv: {
-      title: string;
-      description: string;
-      formTitle: string;
-      formDescription: string;
-    };
-    ru: {
-      title: string;
-      description: string;
-      formTitle: string;
-      formDescription: string;
-    };
-    en: {
-      title: string;
-      description: string;
-      formTitle: string;
-      formDescription: string;
-    };
-  }>().default({
-    lv: {
-      title: "Sazinieties ar mums",
-      description: "Saņemiet profesionālu konsultāciju un bezmaksas piedāvājumu",
-      formTitle: "Pieprasīt piedāvājumu",
-      formDescription: "Aizpildiet formu zemāk un mēs sazināsimies ar jums 24 stundu laikā"
-    },
-    ru: {
-      title: "Свяжитесь с нами",
-      description: "Получите профессиональную консультацию и бесплатное предложение",
-      formTitle: "Запросить предложение",
-      formDescription: "Заполните форму ниже, и мы свяжемся с вами в течение 24 часов"
-    },
-    en: {
-      title: "Contact Us",
-      description: "Get professional consultation and free quote",
-      formTitle: "Request Quote",
-      formDescription: "Fill out the form below and we will get back to you within 24 hours"
-    }
-  }),
+  heroTitle: text("hero_title").notNull(),
+  heroDescription: text("hero_description").notNull(),
+  formTitle: text("form_title").notNull(),
+  formDescription: text("form_description").notNull(),
+  translations: jsonb("translations"), // Object with language codes as keys for all fields
   isActive: boolean("is_active").default(true),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -237,7 +199,7 @@ export const insertGlobalContactInfoSchema = createInsertSchema(globalContactInf
   updatedAt: true,
 });
 
-export const insertContactContentSchema = createInsertSchema(contactContent).omit({
+export const insertContactPageContentSchema = createInsertSchema(contactPageContent).omit({
   id: true,
   updatedAt: true,
 });
@@ -294,8 +256,8 @@ export type InsertServiceItem = z.infer<typeof insertServiceItemSchema>;
 export type ServiceItem = typeof serviceItems.$inferSelect;
 export type InsertGlobalContactInfo = z.infer<typeof insertGlobalContactInfoSchema>;
 export type GlobalContactInfo = typeof globalContactInfo.$inferSelect;
-export type InsertContactContent = z.infer<typeof insertContactContentSchema>;
-export type ContactContent = typeof contactContent.$inferSelect;
+export type InsertContactPageContent = z.infer<typeof insertContactPageContentSchema>;
+export type ContactPageContent = typeof contactPageContent.$inferSelect;
 export type InsertContactInfo = z.infer<typeof insertContactInfoSchema>;
 export type ContactInfo = typeof contactInfo.$inferSelect;
 export type ZboxContent = typeof zboxContent.$inferSelect;
@@ -424,4 +386,39 @@ export type InsertVehicleSelection = z.infer<typeof insertVehicleSelectionSchema
 export type GeoLocation = typeof geoLocations.$inferSelect;
 export type InsertGeoLocation = z.infer<typeof insertGeoLocationSchema>;
 
+// Contact Content Management - with multilingual support
+export const contactContent = pgTable("contact_content", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  // Global contact information
+  phone: text("phone"),
+  email: text("email"),
+  location: text("location"),
+  quotesEmail: text("quotes_email"),
+  // Multilingual content - hero section
+  heroTitleLv: text("hero_title_lv"),
+  heroTitleRu: text("hero_title_ru"),
+  heroTitleEn: text("hero_title_en"),
+  heroDescriptionLv: text("hero_description_lv"),
+  heroDescriptionRu: text("hero_description_ru"),
+  heroDescriptionEn: text("hero_description_en"),
+  // Multilingual content - form section
+  formTitleLv: text("form_title_lv"),
+  formTitleRu: text("form_title_ru"),
+  formTitleEn: text("form_title_en"),
+  formDescriptionLv: text("form_description_lv"),
+  formDescriptionRu: text("form_description_ru"),
+  formDescriptionEn: text("form_description_en"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
 
+// Contact content schema validations
+export const insertContactContentSchema = createInsertSchema(contactContent).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export const contactContentSchema = insertContactContentSchema.partial();
+
+// Contact content types
+export type ContactContent = typeof contactContent.$inferSelect;
+export type InsertContactContent = z.infer<typeof insertContactContentSchema>;
