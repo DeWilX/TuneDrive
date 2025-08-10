@@ -35,12 +35,42 @@ interface CareEcuEngine {
 
 interface CareEcuStage {
   id: number;
-  name: string;
-  hp_original: number;
-  nm_original: number;
-  hp_tuned: number;
-  nm_tuned: number;
-  engine_id: number;
+  user_id: number | null;
+  stage_type: number;
+  int_parent: number;
+  int_eco: number | null;
+  int_hp_new: number | null;
+  int_hp_diff: number | null;
+  int_nm_new: number | null;
+  int_nm_diff: number | null;
+  int_status: number;
+  var_alias: string | null;
+  seo_url: string;
+  price: number;
+  var_title: string;
+  seo_title: string;
+  my_data: any;
+  parent: {
+    id: number;
+    user_id: number | null;
+    var_title: string;
+    seo_title: string;
+    var_subtitle: string | null;
+    int_parent: number;
+    int_fuel_type: number;
+    int_status: number;
+    var_alias: string;
+    int_hp: number;
+    int_nm: number;
+    is_development: any;
+    int_pending: number;
+    rpm_values: any;
+    hp_percentage: any;
+    nm_percentage: any;
+    seo_url: string;
+    my_data: any;
+    parent: any;
+  };
 }
 
 export interface TuningData {
@@ -253,12 +283,13 @@ export async function getYears(
   }
 }
 
-export async function getEngines(
+// New function to get engine specifications from CareEcu year data
+export async function getEnginesFromYear(
   brandName: string,
   modelName: string,
   year: string,
 ): Promise<string[]> {
-  const cacheKey = getCacheKey("getEngines", [
+  const cacheKey = getCacheKey("getEnginesFromYear", [
     brandName.toLowerCase(),
     modelName.toLowerCase(),
     year,
@@ -305,38 +336,34 @@ export async function getEngines(
       );
     }
 
-    // IMPORTANT: CareEcu API's /stages/ endpoint returns tuning stages (ECO, STAGE 1) 
-    // NOT actual engine specifications. We need to extract engine info from the stage data
-    // or fall back to the static database for proper engine specifications.
+    // Get all stages for this year to extract unique engine specifications
     const stages = await cachedApiRequest<CareEcuStage[]>(
       `${API_BASE_URL}/lv/v1/tuning/stages/${yearObj.id}?key=${API_KEY}`,
       cacheKey,
     );
     
-    // Check if stages contain actual engine info (not just tuning stages)
-    const validStages = stages.filter(
-      (stage) => stage && (stage.name || stage.var_title),
-    );
+    if (!stages || stages.length === 0) {
+      throw new CareEcuApiError("No engine data available from CareEcu API");
+    }
     
-    // If we only get tuning stages (ECO, STAGE 1, etc.), this means CareEcu API
-    // doesn't have proper engine specifications for this vehicle
-    const stageNames = validStages.map((stage) => stage.name || stage.var_title || "");
-    const isTuningStagesOnly = stageNames.every(name => 
-      name.toUpperCase().includes("ECO") || 
-      name.toUpperCase().includes("STAGE") ||
-      name.toUpperCase().includes("STEP")
-    );
+    // Extract unique engine specifications from the parent data
+    const engineSpecs = new Set<string>();
+    stages.forEach(stage => {
+      if (stage.parent && stage.parent.var_title) {
+        engineSpecs.add(stage.parent.var_title);
+      }
+    });
     
-    if (isTuningStagesOnly) {
-      // CareEcu API only has tuning stages, not engine specifications
-      // This should trigger fallback to static database in the routes
-      throw new CareEcuApiError("CareEcu API returned tuning stages instead of engine specifications");
+    const engines = Array.from(engineSpecs).filter(engine => engine.length > 0);
+    
+    if (engines.length === 0) {
+      throw new CareEcuApiError("No valid engine specifications found in CareEcu API data");
     }
     
     console.log(
-      `Successfully fetched engines for ${brandName} ${modelName} ${year} from CareEcu API: ${validStages.length}`,
+      `Successfully fetched ${engines.length} engines for ${brandName} ${modelName} ${year} from CareEcu API`,
     );
-    return stageNames.filter(name => name.length > 0).sort();
+    return engines.sort();
   } catch (error) {
     console.error(
       `Failed to fetch engines for ${brandName} ${modelName} ${year}:`,
@@ -346,6 +373,15 @@ export async function getEngines(
       ? error
       : new CareEcuApiError("Failed to fetch vehicle engines");
   }
+}
+
+// Keep the old function for backward compatibility but redirect to new function
+export async function getEngines(
+  brandName: string,
+  modelName: string,
+  year: string,
+): Promise<string[]> {
+  return getEnginesFromYear(brandName, modelName, year);
 }
 
 export async function getTuningData(
@@ -405,7 +441,7 @@ export async function getTuningData(
     // Get stages (cached)
     const stages = await cachedApiRequest<CareEcuStage[]>(
       `${API_BASE_URL}/lv/v1/tuning/stages/${yearObj.id}?key=${API_KEY}`,
-      getCacheKey("getEngines", [
+      getCacheKey("getEnginesFromYear", [
         brandName.toLowerCase(),
         modelName.toLowerCase(),
         year,
@@ -416,45 +452,48 @@ export async function getTuningData(
       return null;
     }
 
-    // For CareEcu API, we need to find the ECO or original stage to get base power
-    // and STAGE 1 to get tuned power
-    const ecoStage = stages.find(
-      (s) => (s.name || "").toUpperCase().includes("ECO") || 
-             (s.name || "").toUpperCase().includes("ORIGINAL")
+    // Find stages for the specific engine
+    const engineStages = stages.filter(
+      (s) => s.parent && s.parent.var_title === engineName
     );
-    const stage1 = stages.find(
-      (s) => (s.name || "").toUpperCase().includes("STAGE") ||
-             (s.name || "").toUpperCase().includes("STEP")
-    );
-    
-    if (!ecoStage && !stage1) {
-      // Try to find any stage that matches the engine name
-      const stage = stages.find(
-        (s) => (s.name || "").toLowerCase() === engineName.toLowerCase(),
-      );
-      if (!stage) {
-        return null;
-      }
-      
-      return {
-        originalPower: stage.hp_original,
-        originalTorque: stage.nm_original,
-        stage1Power: stage.hp_tuned,
-        stage1Torque: stage.nm_tuned,
-      };
+
+    if (engineStages.length === 0) {
+      console.log(`No stages found for engine ${engineName}`);
+      return null;
     }
 
-    // Use ECO stage for original power and STAGE 1 for tuned power
-    const originalPower = ecoStage ? ecoStage.hp_original : (stage1?.hp_original || 0);
-    const originalTorque = ecoStage ? ecoStage.nm_original : (stage1?.nm_original || 0);
-    const stage1Power = stage1 ? stage1.hp_tuned : (ecoStage?.hp_tuned || 0);
-    const stage1Torque = stage1 ? stage1.nm_tuned : (ecoStage?.nm_tuned || 0);
+    // Find ECO and STAGE 1 data for this specific engine
+    const ecoStage = engineStages.find(
+      (s) => (s.var_title || "").toUpperCase().includes("ECO")
+    );
+    const stage1 = engineStages.find(
+      (s) => (s.var_title || "").toUpperCase().includes("STAGE 1")
+    );
+    const stage2 = engineStages.find(
+      (s) => (s.var_title || "").toUpperCase().includes("STAGE 2")
+    );
 
+    if (!ecoStage && !stage1) {
+      console.log(`No valid tuning stages found for engine ${engineName}`);
+      return null;
+    }
+
+    // Extract power data from the stages
+    const originalPower = ecoStage?.parent?.int_hp || stage1?.parent?.int_hp || 0;
+    const originalTorque = ecoStage?.parent?.int_nm || stage1?.parent?.int_nm || 0;
+    const stage1Power = stage1?.int_hp_new || 0;
+    const stage1Torque = stage1?.int_nm_new || 0;
+    const stage2Power = stage2?.int_hp_new || undefined;
+    const stage2Torque = stage2?.int_nm_new || undefined;
+
+    console.log(`Successfully fetched power data for ${engineName} from CareEcu API`);
     return {
       originalPower,
       originalTorque,
       stage1Power,
       stage1Torque,
+      stage2Power,
+      stage2Torque,
     };
   } catch (error) {
     console.error(
