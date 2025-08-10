@@ -385,6 +385,16 @@ app.get("/api/vehicles/variants/:vehicleType/:brand/:model/:generation/:engine",
     }
   });
 
+  // Public navigation endpoint
+  app.get("/api/navigation", async (req, res) => {
+    try {
+      const items = await storage.getAllNavigationItems();
+      res.json(items.filter(item => item.isActive));
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch navigation items" });
+    }
+  });
+
   // Language management routes
   app.get("/api/admin/languages", requireAuth, async (req: AuthRequest, res) => {
     try {
