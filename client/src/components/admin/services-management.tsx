@@ -317,7 +317,7 @@ export function ServicesManagement() {
       const oldIndex = services.findIndex((service: ServiceItem) => service.id === active.id);
       const newIndex = services.findIndex((service: ServiceItem) => service.id === over.id);
 
-      const reorderedServices = arrayMove(services, oldIndex, newIndex);
+      const reorderedServices = arrayMove(services as ServiceItem[], oldIndex, newIndex);
       reorderServicesMutation.mutate(reorderedServices);
     }
   };
