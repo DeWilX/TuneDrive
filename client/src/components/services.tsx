@@ -3,6 +3,19 @@ import { useQuery } from "@tanstack/react-query";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { useLanguage } from "@/hooks/useLanguage";
 
+// Helper function to get translated content
+const getTranslatedContent = (service: any, currentLanguage: string) => {
+  const translations = service.translations || {};
+  const translation = translations[currentLanguage];
+  
+  return {
+    title: translation?.title || service.title,
+    description: translation?.description || service.description,
+    features: translation?.features?.length > 0 ? translation.features : service.features,
+    price: translation?.price || service.price
+  };
+};
+
 // Default services as fallback
 const defaultServices = [
   {
@@ -87,7 +100,7 @@ const defaultServices = [
 
 export default function Services() {
   const { trackClick } = useAnalytics();
-  const { t } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
 
   // Fetch services from admin panel
   const { data: servicesData = [] } = useQuery({
@@ -99,20 +112,23 @@ export default function Services() {
     queryKey: ['/api/page-content'],
   });
 
-  // Transform admin data to match expected structure, fallback to default
+  // Transform admin data to match expected structure with translations, fallback to default
   const services = Array.isArray(servicesData) && servicesData.length > 0 
     ? servicesData
         .sort((a: any, b: any) => (a.order || 0) - (b.order || 0)) // Sort by order
-        .map((service: any) => ({
-          title: service.title,
-          icon: service.icon || 'fa-cog',
-          image: service.image || 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3',
-          description: service.description,
-          features: Array.isArray(service.features) 
-            ? service.features.filter(Boolean) 
-            : (service.features ? service.features.split('\n').filter(Boolean) : []),
-          price: service.price || 'Contact for price'
-        }))
+        .map((service: any) => {
+          const translatedContent = getTranslatedContent(service, currentLanguage);
+          return {
+            title: translatedContent.title,
+            icon: service.icon || 'fa-cog',
+            image: service.image || 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3',
+            description: translatedContent.description,
+            features: Array.isArray(translatedContent.features) 
+              ? translatedContent.features.filter(Boolean) 
+              : (translatedContent.features ? translatedContent.features.split('\n').filter(Boolean) : []),
+            price: translatedContent.price || 'Contact for price'
+          };
+        })
     : defaultServices;
 
   // Get services section content
