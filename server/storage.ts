@@ -31,6 +31,8 @@ import {
   type InsertGeoLocation,
   type ZboxContent,
   type InsertZboxContent,
+  type WhyChooseUsContent,
+  type InsertWhyChooseUsContent,
   vehicles,
   contactRequests,
   adminUsers,
@@ -46,7 +48,8 @@ import {
   clickEvents,
   vehicleSelections,
   geoLocations,
-  zboxContent
+  zboxContent,
+  whyChooseUsContent
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql } from "drizzle-orm";
@@ -138,6 +141,10 @@ export interface IStorage {
   // ZBOX content operations
   getZboxContent(): Promise<ZboxContent | undefined>;
   upsertZboxContent(content: InsertZboxContent): Promise<ZboxContent>;
+  
+  // Why Choose Us content operations
+  getWhyChooseUsContent(): Promise<WhyChooseUsContent | undefined>;
+  upsertWhyChooseUsContent(content: InsertWhyChooseUsContent): Promise<WhyChooseUsContent>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -750,6 +757,33 @@ export class DatabaseStorage implements IStorage {
       // Create new
       const [created] = await db
         .insert(zboxContent)
+        .values(contentData)
+        .returning();
+      return created;
+    }
+  }
+
+  // Why Choose Us content operations
+  async getWhyChooseUsContent(): Promise<WhyChooseUsContent | undefined> {
+    const [result] = await db.select().from(whyChooseUsContent).where(eq(whyChooseUsContent.isActive, true)).limit(1);
+    return result || undefined;
+  }
+
+  async upsertWhyChooseUsContent(contentData: InsertWhyChooseUsContent): Promise<WhyChooseUsContent> {
+    const existing = await this.getWhyChooseUsContent();
+    
+    if (existing) {
+      // Update existing
+      const [updated] = await db
+        .update(whyChooseUsContent)
+        .set({ ...contentData, updatedAt: new Date() })
+        .where(eq(whyChooseUsContent.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      // Create new
+      const [created] = await db
+        .insert(whyChooseUsContent)
         .values(contentData)
         .returning();
       return created;

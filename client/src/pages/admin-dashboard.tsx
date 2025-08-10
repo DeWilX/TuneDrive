@@ -20,6 +20,7 @@ import SiteIdentityManager from "@/components/admin/site-identity-manager";
 import AnalyticsDashboard from "@/components/admin/analytics-dashboard";
 import HelpPanel from "@/components/admin/help-panel";
 import ZboxManagement from "@/components/admin/zbox-management";
+import WhyChooseUsManagement from "@/components/admin/why-choose-us-management";
 
 export default function AdminDashboard() {
   const { user, logout, isAuthenticated, token } = useAdmin();
@@ -200,7 +201,7 @@ export default function AdminDashboard() {
         </Card>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="bg-gray-800 border-gray-700 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-8 gap-1 h-auto p-1">
+          <TabsList className="bg-gray-800 border-gray-700 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-9 gap-1 h-auto p-1">
             <TabsTrigger value="overview" className="data-[state=active]:bg-accent-500 text-xs md:text-sm p-2">
               <i className="fas fa-chart-pie mr-1 md:mr-2"></i>
               <span className="hidden sm:inline">Dashboard</span>
@@ -235,6 +236,11 @@ export default function AdminDashboard() {
               <i className="fas fa-phone mr-1 md:mr-2"></i>
               <span className="hidden sm:inline">Contact</span>
               <span className="sm:hidden">Contact</span>
+            </TabsTrigger>
+            <TabsTrigger value="why-choose-us" className="data-[state=active]:bg-accent-500 text-xs md:text-sm p-2">
+              <i className="fas fa-star mr-1 md:mr-2"></i>
+              <span className="hidden sm:inline">Why Choose Us</span>
+              <span className="sm:hidden">Why</span>
             </TabsTrigger>
             <TabsTrigger value="site-identity" className="data-[state=active]:bg-accent-500 text-xs md:text-sm p-2">
               <i className="fas fa-palette mr-1 md:mr-2"></i>
@@ -401,6 +407,10 @@ export default function AdminDashboard() {
               <p className="text-gray-400">Manage who can access this admin panel. Add or remove admin users and control their permissions.</p>
             </div>
             <UserManager token={token || ''} />
+          </TabsContent>
+
+          <TabsContent value="why-choose-us" className="space-y-6">
+            <WhyChooseUsManagement />
           </TabsContent>
 
           <TabsContent value="site-identity" className="space-y-6">
