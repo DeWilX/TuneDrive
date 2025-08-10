@@ -55,15 +55,37 @@ export default function ContactManagement() {
 
   const { data: contactContent, isLoading } = useQuery({
     queryKey: ['/api/admin/contact-content'],
+    queryFn: async () => {
+      const authToken = (window as any).authToken;
+      const response = await fetch('/api/admin/contact-content', {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch contact content');
+      }
+      return response.json();
+    },
     refetchOnWindowFocus: false,
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: ContactContent) =>
-      apiRequest('/api/admin/contact-content', {
+    mutationFn: async (data: ContactContent) => {
+      const authToken = (window as any).authToken;
+      const response = await fetch('/api/admin/contact-content', {
         method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+        },
         body: JSON.stringify(data),
-      }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update contact content');
+      }
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/contact-content'] });
       queryClient.invalidateQueries({ queryKey: ['/api/contact-content'] });
