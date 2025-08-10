@@ -44,10 +44,13 @@ export default function PowerChecker() {
     enabled: !!selectedModel && !!selectedBrand && !!vehicleType,
   });
 
-  const { data: engines = [] } = useQuery<string[]>({
+  const { data: enginesData = [], isLoading: enginesLoading } = useQuery<string[]>({
     queryKey: [`/api/vehicles/engines/${vehicleType}/${selectedBrand}/${selectedModel}/${selectedGeneration}`],
     enabled: !!selectedGeneration && !!selectedModel && !!selectedBrand && !!vehicleType,
   });
+
+  // Ensure engines is always an array
+  const engines = Array.isArray(enginesData) ? enginesData : [];
   
   const handleCheckPower = async () => {
     if (!selectedEngine || !selectedGeneration || !selectedModel || !selectedBrand || !vehicleType) return;
@@ -221,7 +224,7 @@ export default function PowerChecker() {
                       <SelectValue placeholder="Select Engine" />
                     </SelectTrigger>
                     <SelectContent className="bg-gray-700 border-gray-600">
-                      {(engines as string[]).map((engine: string) => (
+                      {engines.map((engine: string) => (
                         <SelectItem key={engine} value={engine} className="text-gray-100 hover:bg-gray-600">
                           {engine}
                         </SelectItem>
