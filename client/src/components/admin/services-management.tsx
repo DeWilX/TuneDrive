@@ -307,6 +307,11 @@ export function ServicesManagement() {
         price: ""
       };
       const newFeatures = [...currentTranslation.features];
+      
+      // Ensure the array is long enough
+      while (newFeatures.length <= featureIndex) {
+        newFeatures.push("");
+      }
       newFeatures[featureIndex] = value;
       
       return {
@@ -331,13 +336,20 @@ export function ServicesManagement() {
         price: ""
       };
       
+      // Ensure translation features array has same length as main features
+      const newFeatures = [...currentTranslation.features];
+      while (newFeatures.length < prev.features.length) {
+        newFeatures.push("");
+      }
+      newFeatures.push("");
+      
       return {
         ...prev,
         translations: {
           ...prev.translations,
           [languageCode]: {
             ...currentTranslation,
-            features: [...currentTranslation.features, ""]
+            features: newFeatures
           }
         }
       };
@@ -657,7 +669,7 @@ export function ServicesManagement() {
                         value={formData.translations?.[language.code]?.title || ""}
                         onChange={(e) => updateTranslation(language.code, 'title', e.target.value)}
                         className="bg-gray-700 border-gray-600 text-white"
-                        placeholder={`Enter title in ${language.name}`}
+                        placeholder={formData.title || `Enter title in ${language.name}`}
                       />
                     </div>
                     <div>
@@ -666,7 +678,7 @@ export function ServicesManagement() {
                         value={formData.translations?.[language.code]?.description || ""}
                         onChange={(e) => updateTranslation(language.code, 'description', e.target.value)}
                         className="bg-gray-700 border-gray-600 text-white"
-                        placeholder={`Enter description in ${language.name}`}
+                        placeholder={formData.description || `Enter description in ${language.name}`}
                         rows={2}
                       />
                     </div>
@@ -676,18 +688,19 @@ export function ServicesManagement() {
                         value={formData.translations?.[language.code]?.price || ""}
                         onChange={(e) => updateTranslation(language.code, 'price', e.target.value)}
                         className="bg-gray-700 border-gray-600 text-white"
-                        placeholder={`Enter price in ${language.name} (e.g., From €250)`}
+                        placeholder={formData.price || `Enter price in ${language.name}`}
                       />
                     </div>
                     <div>
                       <Label className="text-gray-300">Features</Label>
                       <div className="space-y-2">
-                        {(formData.translations?.[language.code]?.features || []).map((feature, index) => (
+                        {Math.max((formData.translations?.[language.code]?.features || []).length, formData.features.length) > 0 && 
+                         Array.from({ length: Math.max((formData.translations?.[language.code]?.features || []).length, formData.features.length) }, (_, index) => (
                           <div key={index} className="flex gap-2">
                             <Input
-                              value={feature}
+                              value={(formData.translations?.[language.code]?.features || [])[index] || ""}
                               onChange={(e) => updateTranslationFeature(language.code, index, e.target.value)}
-                              placeholder={`Feature description in ${language.name}`}
+                              placeholder={formData.features[index] || `Feature ${index + 1} in ${language.name}`}
                               className="bg-gray-700 border-gray-600 text-white"
                             />
                             <Button
@@ -695,7 +708,7 @@ export function ServicesManagement() {
                               variant="ghost"
                               size="sm"
                               onClick={() => removeTranslationFeature(language.code, index)}
-                              disabled={(formData.translations?.[language.code]?.features || []).length === 1}
+                              disabled={Math.max((formData.translations?.[language.code]?.features || []).length, formData.features.length) === 1}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

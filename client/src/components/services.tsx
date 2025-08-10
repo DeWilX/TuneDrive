@@ -8,15 +8,7 @@ const getTranslatedContent = (service: any, language: string) => {
   const translations = service.translations || {};
   const translation = translations[language];
   
-  // Debug: show which translations are available
-  if (Object.keys(translations).length > 0) {
-    console.log('✅ Service has translations:', service.title, 'Language:', language, 'Available:', Object.keys(translations));
-    if (translation) {
-      console.log('  ✅ Using translation:', translation);
-    } else {
-      console.log('  ❌ No translation for current language, using default');
-    }
-  }
+  // Use translated content when available, fallback to default language
   
   return {
     title: translation?.title || service.title,
