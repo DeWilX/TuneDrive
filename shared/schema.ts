@@ -89,14 +89,52 @@ export const globalContactInfo = pgTable("global_contact_info", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Contact Page Content Management
-export const contactPageContent = pgTable("contact_page_content", {
+// Contact Section Content - Following "Why Choose Us" pattern
+export const contactContent = pgTable("contact_content", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  heroTitle: text("hero_title").notNull(),
-  heroDescription: text("hero_description").notNull(),
-  formTitle: text("form_title").notNull(),
-  formDescription: text("form_description").notNull(),
-  translations: jsonb("translations"), // Object with language codes as keys for all fields
+  title: text("title").notNull().default("Sazinieties ar mums"),
+  description: text("description").notNull().default("Saņemiet profesionālu konsultāciju un bezmaksas piedāvājumu"),
+  formTitle: text("form_title").notNull().default("Pieprasīt piedāvājumu"),
+  formDescription: text("form_description").notNull().default("Aizpildiet formu zemāk un mēs sazināsimies ar jums 24 stundu laikā"),
+  translations: jsonb("translations").$type<{
+    lv: {
+      title: string;
+      description: string;
+      formTitle: string;
+      formDescription: string;
+    };
+    ru: {
+      title: string;
+      description: string;
+      formTitle: string;
+      formDescription: string;
+    };
+    en: {
+      title: string;
+      description: string;
+      formTitle: string;
+      formDescription: string;
+    };
+  }>().default({
+    lv: {
+      title: "Sazinieties ar mums",
+      description: "Saņemiet profesionālu konsultāciju un bezmaksas piedāvājumu",
+      formTitle: "Pieprasīt piedāvājumu",
+      formDescription: "Aizpildiet formu zemāk un mēs sazināsimies ar jums 24 stundu laikā"
+    },
+    ru: {
+      title: "Свяжитесь с нами",
+      description: "Получите профессиональную консультацию и бесплатное предложение",
+      formTitle: "Запросить предложение",
+      formDescription: "Заполните форму ниже, и мы свяжемся с вами в течение 24 часов"
+    },
+    en: {
+      title: "Contact Us",
+      description: "Get professional consultation and free quote",
+      formTitle: "Request Quote",
+      formDescription: "Fill out the form below and we will get back to you within 24 hours"
+    }
+  }),
   isActive: boolean("is_active").default(true),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
