@@ -163,13 +163,10 @@ export default function WhyChooseUsManagement() {
   };
 
   const addFeature = () => {
-    if (newFeature.icon && newFeature.title && newFeature.description) {
-      setFormData(prev => ({
-        ...prev,
-        features: [...prev.features, { ...newFeature }]
-      }));
-      setNewFeature({ icon: '', title: '', description: '' });
-    }
+    setFormData(prev => ({
+      ...prev,
+      features: [...prev.features, { icon: 'fa-star', title: 'New Feature', description: 'Enter description here' }]
+    }));
   };
 
   const removeFeature = (index: number) => {
@@ -180,19 +177,35 @@ export default function WhyChooseUsManagement() {
   };
 
   const addWorkshopFeature = () => {
-    if (newWorkshopFeature.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        workshopFeatures: [...prev.workshopFeatures, newWorkshopFeature.trim()]
-      }));
-      setNewWorkshopFeature('');
-    }
+    setFormData(prev => ({
+      ...prev,
+      workshopFeatures: [...prev.workshopFeatures, 'New workshop feature']
+    }));
   };
 
   const removeWorkshopFeature = (index: number) => {
     setFormData(prev => ({
       ...prev,
       workshopFeatures: prev.workshopFeatures.filter((_, i) => i !== index)
+    }));
+  };
+
+  // Helper functions for direct editing
+  const updateFeature = (index: number, field: 'icon' | 'title' | 'description', value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      features: prev.features.map((feature, i) => 
+        i === index ? { ...feature, [field]: value } : feature
+      )
+    }));
+  };
+
+  const updateWorkshopFeature = (index: number, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      workshopFeatures: prev.workshopFeatures.map((feature, i) => 
+        i === index ? value : feature
+      )
     }));
   };
 
@@ -339,12 +352,15 @@ export default function WhyChooseUsManagement() {
                 <Label>Workshop Features</Label>
                 <div className="space-y-2 mt-2">
                   {formData.workshopFeatures.map((feature, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <Badge variant="secondary" className="flex-1">
-                        {feature}
-                      </Badge>
+                    <div key={index} className="flex items-center gap-2 p-2 border rounded-lg bg-gray-50 dark:bg-gray-800">
+                      <Input
+                        value={feature}
+                        onChange={(e) => updateWorkshopFeature(index, e.target.value)}
+                        className="flex-1"
+                        placeholder="Workshop feature"
+                      />
                       <Button
-                        variant="ghost"
+                        variant="destructive"
                         size="sm"
                         onClick={() => removeWorkshopFeature(index)}
                       >
@@ -353,17 +369,10 @@ export default function WhyChooseUsManagement() {
                     </div>
                   ))}
                 </div>
-                <div className="flex items-center gap-2 mt-3">
-                  <Input
-                    value={newWorkshopFeature}
-                    onChange={(e) => setNewWorkshopFeature(e.target.value)}
-                    placeholder="Add workshop feature..."
-                    onKeyDown={(e) => e.key === 'Enter' && addWorkshopFeature()}
-                  />
-                  <Button onClick={addWorkshopFeature} size="sm">
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </div>
+                <Button onClick={addWorkshopFeature} className="w-full border-2 border-dashed border-muted-foreground/50 bg-transparent hover:bg-muted mt-3">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Workshop Feature
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -375,70 +384,69 @@ export default function WhyChooseUsManagement() {
             <CardHeader>
               <CardTitle>Main Features</CardTitle>
               <CardDescription>
-                Add and manage the key features that highlight your advantages
+                Click directly on any field to edit - simple and fast
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {formData.features.map((feature, index) => (
-                <div key={index} className="p-4 border rounded-lg space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <i className={`fas ${feature.icon} text-accent-500`}></i>
-                      <h4 className="font-semibold">{feature.title}</h4>
+                <div key={index} className="p-4 border rounded-lg space-y-3 bg-gray-50 dark:bg-gray-800">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <i className={`fas ${feature.icon} text-accent-500 text-xl`}></i>
+                          <select
+                            value={feature.icon}
+                            onChange={(e) => updateFeature(index, 'icon', e.target.value)}
+                            className="p-2 border rounded text-sm bg-background text-foreground"
+                          >
+                            <option value="fa-award">🏆 Award</option>
+                            <option value="fa-calendar-alt">📅 Calendar</option>
+                            <option value="fa-tachometer-alt">⚡ Speed</option>
+                            <option value="fa-user-cog">👨‍🔧 Expert</option>
+                            <option value="fa-shield-alt">🛡️ Shield</option>
+                            <option value="fa-tools">🔧 Tools</option>
+                            <option value="fa-chart-line">📈 Growth</option>
+                            <option value="fa-heart">❤️ Heart</option>
+                            <option value="fa-star">⭐ Star</option>
+                            <option value="fa-thumbs-up">👍 Thumbs Up</option>
+                            <option value="fa-check-circle">✅ Check</option>
+                            <option value="fa-cog">⚙️ Settings</option>
+                            <option value="fa-rocket">🚀 Rocket</option>
+                            <option value="fa-lightbulb">💡 Idea</option>
+                            <option value="fa-fire">🔥 Fire</option>
+                          </select>
+                        </div>
+                        <Input
+                          value={feature.title}
+                          onChange={(e) => updateFeature(index, 'title', e.target.value)}
+                          className="font-medium flex-1"
+                          placeholder="Feature title"
+                        />
+                      </div>
+                      <textarea
+                        value={feature.description}
+                        onChange={(e) => updateFeature(index, 'description', e.target.value)}
+                        className="w-full p-3 border rounded-md bg-background text-foreground resize-none"
+                        rows={2}
+                        placeholder="Feature description"
+                      />
                     </div>
                     <Button
-                      variant="ghost"
+                      variant="destructive"
                       size="sm"
                       onClick={() => removeFeature(index)}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
-                  <p className="text-sm text-muted-foreground">{feature.description}</p>
                 </div>
               ))}
-
-              <Separator />
-
-              <div className="space-y-3">
-                <h4 className="font-medium">Add New Feature</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div>
-                    <Label htmlFor="newIcon">Icon (Font Awesome class)</Label>
-                    <Input
-                      id="newIcon"
-                      value={newFeature.icon}
-                      onChange={(e) => setNewFeature(prev => ({ ...prev, icon: e.target.value }))}
-                      placeholder="fa-calendar-alt"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Example: fa-award, fa-tachometer-alt, fa-user-cog
-                    </p>
-                  </div>
-                  <div>
-                    <Label htmlFor="newTitle">Feature Title</Label>
-                    <Input
-                      id="newTitle"
-                      value={newFeature.title}
-                      onChange={(e) => setNewFeature(prev => ({ ...prev, title: e.target.value }))}
-                      placeholder="15+ Years Experience"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="newDescription">Feature Description</Label>
-                    <Input
-                      id="newDescription"
-                      value={newFeature.description}
-                      onChange={(e) => setNewFeature(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Proven expertise in automotive..."
-                    />
-                  </div>
-                </div>
-                <Button onClick={addFeature} className="w-full">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Feature
-                </Button>
-              </div>
+              
+              <Button onClick={addFeature} className="w-full border-2 border-dashed border-muted-foreground/50 bg-transparent hover:bg-muted">
+                <Plus className="w-4 h-4 mr-2" />
+                Add New Feature
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
