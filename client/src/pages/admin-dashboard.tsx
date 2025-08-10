@@ -10,6 +10,7 @@ import VisualContentEditor from "@/components/admin/visual-content-editor";
 import NavigationManager from "@/components/admin/navigation-manager";
 import MultilingualNavigation from "@/components/admin/multilingual-navigation";
 import ServicesManager from "@/components/admin/services-manager";
+import { ServicesManagement } from "@/components/admin/services-management";
 import ContactManager from "@/components/admin/contact-manager";
 import VehicleManager from "@/components/admin/vehicle-manager";
 import PowerCalculatorManager from "@/components/admin/power-calculator-manager";
@@ -380,7 +381,7 @@ export default function AdminDashboard() {
               <h2 className="text-2xl font-bold text-white mb-2">Manage Your Services</h2>
               <p className="text-gray-400">Add, edit, or remove the tuning services you offer. These appear on your website's services section with prices and descriptions.</p>
             </div>
-            <ServicesManager token={token || ''} />
+            <ServicesManagement />
           </TabsContent>
 
           <TabsContent value="contact" className="space-y-6">

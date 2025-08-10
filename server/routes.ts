@@ -19,6 +19,7 @@ import {
 import { login, requireAuth, type AuthRequest } from "./auth";
 import { z } from "zod";
 import { getBrands, getModels, getYears, getEngines, getTuningData } from "./careecu-api";
+import { ObjectStorageService } from "./objectStorage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Hybrid vehicle data routes - CareEcu API with fallback to static database
@@ -670,7 +671,7 @@ app.get("/api/vehicles/variants/:vehicleType/:brand/:model/:generation/:engine",
   // Language Management Routes
   app.get("/api/admin/languages", requireAuth, async (req: AuthRequest, res) => {
     try {
-      const languages = await storage.getLanguages();
+      const languages = await storage.getAllLanguages();
       res.json(languages);
     } catch (error) {
       console.error("Error fetching languages:", error);
@@ -721,47 +722,68 @@ app.get("/api/vehicles/variants/:vehicleType/:brand/:model/:generation/:engine",
   // Object storage routes for image uploads
   app.post("/api/objects/upload", async (req, res) => {
     try {
-      const { ObjectStorageService } = await import("./objectStorage");
       const objectStorageService = new ObjectStorageService();
       const uploadURL = await objectStorageService.getObjectEntityUploadURL();
       res.json({ uploadURL });
     } catch (error) {
-      console.error("Error getting upload URL:", error);
-      res.status(500).json({ error: "Failed to get upload URL" });
+      console.error("Error generating upload URL:", error);
+      res.status(500).json({ error: "Failed to generate upload URL" });
     }
   });
 
+  // Object entity serving route
   app.get("/objects/:objectPath(*)", async (req, res) => {
     try {
-      const { ObjectStorageService, ObjectNotFoundError } = await import("./objectStorage");
       const objectStorageService = new ObjectStorageService();
       const objectFile = await objectStorageService.getObjectEntityFile(req.path);
       objectStorageService.downloadObject(objectFile, res);
     } catch (error: any) {
-      console.error("Error accessing object:", error);
-      if (error instanceof Error && error.name === "ObjectNotFoundError") {
+      console.error("Error serving object:", error);
+      if (error.message?.includes("not found")) {
         return res.sendStatus(404);
       }
       return res.sendStatus(500);
     }
   });
 
-  app.put("/api/site-images", async (req, res) => {
-    if (!req.body.imageURL || !req.body.imageType) {
-      return res.status(400).json({ error: "imageURL and imageType are required" });
+  // Public object serving route  
+  app.get("/public-objects/:filePath(*)", async (req, res) => {
+    const filePath = req.params.filePath;
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const file = await objectStorageService.searchPublicObject(filePath);
+      if (!file) {
+        return res.status(404).json({ error: "File not found" });
+      }
+      objectStorageService.downloadObject(file, res);
+    } catch (error) {
+      console.error("Error searching for public object:", error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Update service with image upload support
+  app.put("/api/admin/services/:id/image", requireAuth, async (req: AuthRequest, res) => {
+    if (!req.body.imageURL) {
+      return res.status(400).json({ error: "imageURL is required" });
     }
 
     try {
-      const { ObjectStorageService } = await import("./objectStorage");
+      const { id } = req.params;
       const objectStorageService = new ObjectStorageService();
       const objectPath = objectStorageService.normalizeObjectEntityPath(req.body.imageURL);
+      
+      const service = await storage.updateService(id, { image: objectPath });
+      if (!service) {
+        return res.status(404).json({ error: "Service not found" });
+      }
 
       res.status(200).json({
         objectPath: objectPath,
-        imageType: req.body.imageType,
+        service: service
       });
     } catch (error) {
-      console.error("Error processing site image:", error);
+      console.error("Error setting service image:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
