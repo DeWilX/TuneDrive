@@ -175,7 +175,7 @@ export function ServicesManagement() {
       features: Array.isArray(service.features) ? service.features : [""],
       price: service.price,
       order: service.order,
-      translations: service.translations || {} as { [languageCode: string]: { title: string; description: string; } }
+      translations: (service.translations as { [languageCode: string]: { title: string; description: string; } }) || ({} as { [languageCode: string]: { title: string; description: string; } })
     });
     setIsFormOpen(true);
   };
@@ -494,12 +494,19 @@ export function ServicesManagement() {
             </TabsContent>
           </Tabs>
 
-          <div className="flex justify-end gap-3 pt-4">
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-700 mt-6">
             <Button variant="outline" onClick={() => setIsFormOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit}>
-              {selectedService ? "Update Service" : "Create Service"}
+            <Button 
+              onClick={handleSubmit}
+              disabled={createServiceMutation.isPending || updateServiceMutation.isPending}
+              className="bg-accent-500 hover:bg-accent-600 text-white"
+            >
+              {createServiceMutation.isPending || updateServiceMutation.isPending 
+                ? "Saving..." 
+                : selectedService ? "Save Changes" : "Create Service"
+              }
             </Button>
           </div>
         </DialogContent>
