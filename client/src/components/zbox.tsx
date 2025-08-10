@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/hooks/useLanguage";
 
 export default function ZBox() {
-  const { t, currentLanguage } = useLanguage();
+  const { t, language } = useLanguage();
   
   // Fetch ZBox content from admin panel
   const { data: zboxContent = null } = useQuery<any>({
@@ -30,21 +30,32 @@ export default function ZBox() {
       return defaultContent;
     }
 
-    const translation = zboxContent.translations?.[currentLanguage];
-    if (!translation) {
-      return zboxContent; // Use default/original content
+    // If no translations exist or language doesn't have translation, use original content
+    if (!zboxContent.translations || !zboxContent.translations[language]) {
+      return {
+        title: zboxContent.title || defaultContent.title,
+        description: zboxContent.description || defaultContent.description,
+        features: Array.isArray(zboxContent.features) ? zboxContent.features : defaultContent.features,
+        price: zboxContent.price || defaultContent.price,
+        priceNote: zboxContent.priceNote || defaultContent.priceNote,
+        buttonText: zboxContent.buttonText || defaultContent.buttonText,
+        image: zboxContent.image
+      };
     }
 
-    // Merge translation with default content, prioritizing translation fields
+    const translation = zboxContent.translations[language];
+
+    // Merge translation with original content, prioritizing non-empty translation fields
     return {
-      title: translation.title || zboxContent.title,
-      description: translation.description || zboxContent.description,
+      title: (translation.title && translation.title.trim()) || zboxContent.title || defaultContent.title,
+      description: (translation.description && translation.description.trim()) || zboxContent.description || defaultContent.description,
       features: (Array.isArray(translation.features) && translation.features.length > 0) 
-        ? translation.features.filter(f => f && f.trim()) 
-        : zboxContent.features,
-      price: translation.price || zboxContent.price,
-      priceNote: translation.priceNote || zboxContent.priceNote,
-      buttonText: translation.buttonText || zboxContent.buttonText
+        ? translation.features.filter((f: string) => f && f.trim()) 
+        : (Array.isArray(zboxContent.features) ? zboxContent.features : defaultContent.features),
+      price: (translation.price && translation.price.trim()) || zboxContent.price || defaultContent.price,
+      priceNote: (translation.priceNote && translation.priceNote.trim()) || zboxContent.priceNote || defaultContent.priceNote,
+      buttonText: (translation.buttonText && translation.buttonText.trim()) || zboxContent.buttonText || defaultContent.buttonText,
+      image: zboxContent.image
     };
   };
 
@@ -104,7 +115,7 @@ export default function ZBox() {
           
           <div className="relative">
             <img 
-              src={content.image || "https://pixabay.com/get/gef47e70d2325ba5852f361aac8b997f684bfe06892d136d5fda0eb30606cdee09118bc1bd44183147c08af49373554f97344181f9885cebf3b1181e4290ad95f_1280.jpg"} 
+              src={(content as any).image || "https://pixabay.com/get/gef47e70d2325ba5852f361aac8b997f684bfe06892d136d5fda0eb30606cdee09118bc1bd44183147c08af49373554f97344181f9885cebf3b1181e4290ad95f_1280.jpg"} 
               alt="ZBOX Chiptuning device installation" 
               className="w-full rounded-xl shadow-2xl"
               onError={(e) => {
