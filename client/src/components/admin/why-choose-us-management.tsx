@@ -358,11 +358,11 @@ export default function WhyChooseUsManagement() {
                 <Label>Workshop Features</Label>
                 <div className="space-y-2 mt-2">
                   {formData.workshopFeatures.map((feature, index) => (
-                    <div key={index} className="flex items-center gap-2 p-3 border-2 rounded-lg bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-600">
+                    <div key={index} className="flex items-center gap-2 p-3 border-2 rounded-lg bg-background border-border">
                       <Input
                         value={feature}
                         onChange={(e) => updateWorkshopFeature(index, e.target.value)}
-                        className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
+                        className="flex-1 bg-background text-foreground border-border"
                         placeholder="Workshop feature"
                       />
                       <Button
@@ -398,7 +398,7 @@ export default function WhyChooseUsManagement() {
             </CardHeader>
             <CardContent className="space-y-4">
               {formData.features.map((feature, index) => (
-                <div key={index} className="p-4 border-2 rounded-lg space-y-3 bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-600">
+                <div key={index} className="p-4 border-2 rounded-lg space-y-3 bg-background border-border">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 space-y-3">
                       <div className="flex items-center gap-3">
@@ -407,7 +407,7 @@ export default function WhyChooseUsManagement() {
                           <select
                             value={feature.icon}
                             onChange={(e) => updateFeature(index, 'icon', e.target.value)}
-                            className="p-2 border rounded text-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
+                            className="p-2 border rounded text-sm bg-background text-foreground border-border"
                           >
                             <option value="fa-award">🏆 Award</option>
                             <option value="fa-calendar-alt">📅 Calendar</option>
@@ -434,14 +434,14 @@ export default function WhyChooseUsManagement() {
                         <Input
                           value={feature.title}
                           onChange={(e) => updateFeature(index, 'title', e.target.value)}
-                          className="font-medium flex-1 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
+                          className="font-medium flex-1 bg-background text-foreground border-border"
                           placeholder="Feature title"
                         />
                       </div>
                       <textarea
                         value={feature.description}
                         onChange={(e) => updateFeature(index, 'description', e.target.value)}
-                        className="w-full p-3 border rounded-md bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 resize-none"
+                        className="w-full p-3 border rounded-md bg-background text-foreground border-border resize-none"
                         rows={2}
                         placeholder="Feature description"
                       />
