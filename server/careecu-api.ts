@@ -13,6 +13,7 @@ interface CareEcuBrand {
   is_tractor?: number;
   logo?: string;
   image?: string;
+  var_logo?: string;
 }
 
 interface CareEcuModel {
@@ -577,7 +578,7 @@ export async function getTuningData(
       const brand = brands.find(
         (b) => (b.name || b.var_title).toLowerCase() === brandName.toLowerCase()
       );
-      brandLogo = brand?.logo || brand?.image;
+      brandLogo = brand?.var_logo || brand?.logo || brand?.image;
     } catch (error) {
       console.log("Could not fetch brand logo:", error);
     }

@@ -137,78 +137,81 @@ export default function PowerChecker() {
               </div>
 
               {/* Model Selection */}
-              {selectedBrand && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {t.powerChecker.selectModel}
-                  </label>
-                  <Select value={selectedModel} onValueChange={handleModelChange}>
-                    <SelectTrigger className="bg-gray-700 border-gray-600 text-gray-100">
-                      <SelectValue placeholder={t.powerChecker.selectModel} />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-700 border-gray-600">
-                      {(models as string[]).map((model: string) => (
-                        <SelectItem key={model} value={model} className="text-gray-100 hover:bg-gray-600">
-                          {model}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  {t.powerChecker.selectModel}
+                </label>
+                <Select value={selectedModel} onValueChange={handleModelChange} disabled={!selectedBrand}>
+                  <SelectTrigger className={`bg-gray-700 border-gray-600 text-gray-100 ${!selectedBrand ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                    <SelectValue placeholder={selectedBrand ? t.powerChecker.selectModel : "Select brand first"} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-700 border-gray-600">
+                    {(models as string[]).map((model: string) => (
+                      <SelectItem key={model} value={model} className="text-gray-100 hover:bg-gray-600">
+                        {model}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
               {/* Generation Selection */}
-              {selectedModel && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Generation
-                  </label>
-                  <Select value={selectedGeneration} onValueChange={handleGenerationChange}>
-                    <SelectTrigger className="bg-gray-700 border-gray-600 text-gray-100">
-                      <SelectValue placeholder="Select Generation" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-700 border-gray-600">
-                      {(generations as string[]).map((generation: string) => (
-                        <SelectItem key={generation} value={generation} className="text-gray-100 hover:bg-gray-600">
-                          {generation}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Generation
+                </label>
+                <Select value={selectedGeneration} onValueChange={handleGenerationChange} disabled={!selectedModel}>
+                  <SelectTrigger className={`bg-gray-700 border-gray-600 text-gray-100 ${!selectedModel ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                    <SelectValue placeholder={selectedModel ? "Select Generation" : "Select model first"} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-700 border-gray-600">
+                    {(generations as string[]).map((generation: string) => (
+                      <SelectItem key={generation} value={generation} className="text-gray-100 hover:bg-gray-600">
+                        {generation}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
               {/* Engine Selection */}
-              {selectedGeneration && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Engine Type
-                  </label>
-                  <Select value={selectedEngine} onValueChange={setSelectedEngine}>
-                    <SelectTrigger className="bg-gray-700 border-gray-600 text-gray-100">
-                      <SelectValue placeholder="Select Engine" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-700 border-gray-600">
-                      {engines.map((engine: string) => (
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Engine Type
+                </label>
+                <Select value={selectedEngine} onValueChange={setSelectedEngine} disabled={!selectedGeneration}>
+                  <SelectTrigger className={`bg-gray-700 border-gray-600 text-gray-100 ${!selectedGeneration ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                    <SelectValue placeholder={selectedGeneration ? "Select Engine" : "Select generation first"} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-700 border-gray-600">
+                    {enginesLoading ? (
+                      <SelectItem value="loading" disabled className="text-gray-400">
+                        Loading engines...
+                      </SelectItem>
+                    ) : engines.length > 0 ? (
+                      engines.map((engine: string) => (
                         <SelectItem key={engine} value={engine} className="text-gray-100 hover:bg-gray-600">
                           {engine}
                         </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+                      ))
+                    ) : (
+                      <SelectItem value="none" disabled className="text-gray-400">
+                        No engines available
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
 
               {/* Check Power Button */}
-              {selectedEngine && (
-                <Button
-                  onClick={handleCheckPower}
-                  className="w-full bg-accent-500 hover:bg-accent-600 text-white"
-                >
-                  <i className="fas fa-search mr-2"></i>
-                  {t.powerChecker.checkPower}
-                </Button>
-              )}
+              <Button
+                onClick={handleCheckPower}
+                disabled={!selectedEngine}
+                className={`w-full bg-accent-500 hover:bg-accent-600 text-white ${!selectedEngine ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <i className="fas fa-search mr-2"></i>
+                {t.powerChecker.checkPower}
+              </Button>
             </CardContent>
           </Card>
 
@@ -275,8 +278,8 @@ export default function PowerChecker() {
                       <div className="text-3xl font-bold text-white mb-1">{powerData.stage1Power}<span className="text-lg font-normal text-gray-300">HP</span></div>
                       <div className="text-2xl font-semibold text-gray-300 mb-3">{powerData.stage1Torque}<span className="text-lg font-normal text-gray-400">NM</span></div>
                       <div className="flex justify-center space-x-6 text-sm">
-                        <span className="text-red-400 font-bold">+{powerData.stage1Power - powerData.originalPower} HP</span>
-                        <span className="text-red-400 font-bold">+{powerData.stage1Torque - powerData.originalTorque} NM</span>
+                        <span className="text-red-400 font-bold">+{powerData.stage1Power - powerData.originalPower} HP (+{powerData.stage1PowerGain}%)</span>
+                        <span className="text-red-400 font-bold">+{powerData.stage1Torque - powerData.originalTorque} NM (+{powerData.stage1TorqueGain}%)</span>
                       </div>
                     </div>
 
@@ -294,8 +297,8 @@ export default function PowerChecker() {
                         <div className="text-3xl font-bold text-white mb-1">{powerData.stage2Power}<span className="text-lg font-normal text-gray-300">HP</span></div>
                         <div className="text-2xl font-semibold text-gray-300 mb-3">{powerData.stage2Torque}<span className="text-lg font-normal text-gray-400">NM</span></div>
                         <div className="flex justify-center space-x-6 text-sm">
-                          <span className="text-red-400 font-bold">+{powerData.stage2Power - powerData.originalPower} HP</span>
-                          <span className="text-red-400 font-bold">+{powerData.stage2Torque - powerData.originalTorque} NM</span>
+                          <span className="text-red-400 font-bold">+{powerData.stage2Power - powerData.originalPower} HP (+{powerData.stage2PowerGain}%)</span>
+                          <span className="text-red-400 font-bold">+{powerData.stage2Torque - powerData.originalTorque} NM (+{powerData.stage2TorqueGain}%)</span>
                         </div>
                       </div>
                     )}
