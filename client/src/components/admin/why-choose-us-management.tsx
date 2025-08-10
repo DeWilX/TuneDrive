@@ -483,14 +483,11 @@ export default function WhyChooseUsManagement() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3">
                   {[
                     { code: 'en', name: 'English', flag: '🇺🇸' },
                     { code: 'lv', name: 'Latvian', flag: '🇱🇻' },
-                    { code: 'ru', name: 'Russian', flag: '🇷🇺' },
-                    { code: 'de', name: 'German', flag: '🇩🇪' },
-                    { code: 'fr', name: 'French', flag: '🇫🇷' },
-                    { code: 'es', name: 'Spanish', flag: '🇪🇸' }
+                    { code: 'ru', name: 'Russian', flag: '🇷🇺' }
                   ].map((lang) => (
                     <Button
                       key={lang.code}
@@ -526,10 +523,7 @@ export default function WhyChooseUsManagement() {
                   {[
                     { code: 'en', name: 'English', flag: '🇺🇸' },
                     { code: 'lv', name: 'Latvian', flag: '🇱🇻' },
-                    { code: 'ru', name: 'Russian', flag: '🇷🇺' },
-                    { code: 'de', name: 'German', flag: '🇩🇪' },
-                    { code: 'fr', name: 'French', flag: '🇫🇷' },
-                    { code: 'es', name: 'Spanish', flag: '🇪🇸' }
+                    { code: 'ru', name: 'Russian', flag: '🇷🇺' }
                   ].map((lang) => {
                     const hasTranslation = formData.translations?.[lang.code]?.title || formData.translations?.[lang.code]?.description;
                     return (
@@ -566,16 +560,10 @@ export default function WhyChooseUsManagement() {
                 <CardTitle className="flex items-center gap-3">
                   <span className="text-2xl">
                     {selectedLanguage === 'en' ? '🇺🇸' : 
-                     selectedLanguage === 'lv' ? '🇱🇻' : 
-                     selectedLanguage === 'ru' ? '🇷🇺' : 
-                     selectedLanguage === 'de' ? '🇩🇪' : 
-                     selectedLanguage === 'fr' ? '🇫🇷' : '🇪🇸'}
+                     selectedLanguage === 'lv' ? '🇱🇻' : '🇷🇺'}
                   </span>
                   Translate to {selectedLanguage === 'en' ? 'English' : 
-                              selectedLanguage === 'lv' ? 'Latvian' : 
-                              selectedLanguage === 'ru' ? 'Russian' : 
-                              selectedLanguage === 'de' ? 'German' : 
-                              selectedLanguage === 'fr' ? 'French' : 'Spanish'}
+                              selectedLanguage === 'lv' ? 'Latvian' : 'Russian'}
                 </CardTitle>
                 <CardDescription>
                   Fill in the translations below. Leave blank to use the original content.
@@ -623,6 +611,163 @@ export default function WhyChooseUsManagement() {
                   </div>
                 </div>
 
+                {/* Workshop Section Translation */}
+                <div className="border-t pt-6">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <span>🏭</span>
+                    Workshop Section
+                  </h3>
+                  
+                  {/* Workshop Title */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Original Workshop Title</Label>
+                      <div className="p-3 bg-gray-50 border rounded-md text-sm text-gray-700">
+                        {formData.workshopTitle}
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor={`workshop-title-${selectedLanguage}`}>Translation</Label>
+                      <Input
+                        id={`workshop-title-${selectedLanguage}`}
+                        value={formData.translations?.[selectedLanguage]?.workshopTitle || ''}
+                        onChange={(e) => updateTranslation('workshopTitle', e.target.value)}
+                        placeholder={`Workshop title in ${selectedLanguage.toUpperCase()}`}
+                        className="bg-background text-foreground border-border"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Workshop Description */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Original Workshop Description</Label>
+                      <div className="p-3 bg-gray-50 border rounded-md text-sm text-gray-700 min-h-[80px]">
+                        {formData.workshopDescription}
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor={`workshop-description-${selectedLanguage}`}>Translation</Label>
+                      <Textarea
+                        id={`workshop-description-${selectedLanguage}`}
+                        value={formData.translations?.[selectedLanguage]?.workshopDescription || ''}
+                        onChange={(e) => updateTranslation('workshopDescription', e.target.value)}
+                        placeholder={`Workshop description in ${selectedLanguage.toUpperCase()}`}
+                        rows={3}
+                        className="bg-background text-foreground border-border"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Workshop Features */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                      <Label className="text-sm font-medium text-gray-600">Original Workshop Features</Label>
+                      <div className="p-3 bg-gray-50 border rounded-md text-sm text-gray-700 min-h-[120px]">
+                        <ul className="space-y-1">
+                          {formData.workshopFeatures.map((feature, index) => (
+                            <li key={index} className="flex items-center gap-2">
+                              <span className="text-green-600">•</span>
+                              {feature}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor={`workshop-features-${selectedLanguage}`}>Translation (one per line)</Label>
+                      <Textarea
+                        id={`workshop-features-${selectedLanguage}`}
+                        value={formData.translations?.[selectedLanguage]?.workshopFeatures?.join('\n') || ''}
+                        onChange={(e) => updateTranslation('workshopFeatures', e.target.value.split('\n').filter(line => line.trim()))}
+                        placeholder={`Workshop features in ${selectedLanguage.toUpperCase()}, one per line`}
+                        rows={5}
+                        className="bg-background text-foreground border-border"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Main Features Translation */}
+                <div className="border-t pt-6">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <span>⭐</span>
+                    Main Features
+                  </h3>
+                  
+                  <div className="space-y-6">
+                    {formData.features.map((feature, index) => (
+                      <div key={index} className="border rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-4">
+                          <i className={`fas ${feature.icon} text-accent-500 text-lg`}></i>
+                          <span className="font-medium">Feature {index + 1}</span>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          {/* Feature Title */}
+                          <div className="space-y-3">
+                            <div>
+                              <Label className="text-sm font-medium text-gray-600">Original Title</Label>
+                              <div className="p-2 bg-gray-50 border rounded text-sm text-gray-700">
+                                {feature.title}
+                              </div>
+                            </div>
+                            <div>
+                              <Label>Title Translation</Label>
+                              <Input
+                                value={getCurrentTranslation().features?.[index]?.title || ''}
+                                onChange={(e) => {
+                                  const currentFeatures = getCurrentTranslation().features || [];
+                                  const updatedFeatures = [...currentFeatures];
+                                  updatedFeatures[index] = {
+                                    ...updatedFeatures[index],
+                                    icon: feature.icon,
+                                    title: e.target.value,
+                                    description: updatedFeatures[index]?.description || ''
+                                  };
+                                  updateTranslation('features', updatedFeatures);
+                                }}
+                                placeholder={`Title in ${selectedLanguage.toUpperCase()}`}
+                                className="bg-background text-foreground border-border"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Feature Description */}
+                          <div className="space-y-3">
+                            <div>
+                              <Label className="text-sm font-medium text-gray-600">Original Description</Label>
+                              <div className="p-2 bg-gray-50 border rounded text-sm text-gray-700 min-h-[40px]">
+                                {feature.description}
+                              </div>
+                            </div>
+                            <div>
+                              <Label>Description Translation</Label>
+                              <Textarea
+                                value={getCurrentTranslation().features?.[index]?.description || ''}
+                                onChange={(e) => {
+                                  const currentFeatures = getCurrentTranslation().features || [];
+                                  const updatedFeatures = [...currentFeatures];
+                                  updatedFeatures[index] = {
+                                    ...updatedFeatures[index],
+                                    icon: feature.icon,
+                                    title: updatedFeatures[index]?.title || '',
+                                    description: e.target.value
+                                  };
+                                  updateTranslation('features', updatedFeatures);
+                                }}
+                                placeholder={`Description in ${selectedLanguage.toUpperCase()}`}
+                                rows={2}
+                                className="bg-background text-foreground border-border"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="flex items-center justify-between pt-4 border-t">
                   <p className="text-sm text-gray-600">
                     💡 Tip: Translations are automatically saved as you type
@@ -636,7 +781,11 @@ export default function WhyChooseUsManagement() {
                           ...prev.translations,
                           [selectedLanguage]: {
                             title: '',
-                            description: ''
+                            description: '',
+                            workshopTitle: '',
+                            workshopDescription: '',
+                            workshopFeatures: [],
+                            features: []
                           }
                         }
                       }));
