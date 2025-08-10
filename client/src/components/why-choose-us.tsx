@@ -34,9 +34,10 @@ const workshopFeatures = [
 export default function WhyChooseUs() {
   const { t, language } = useLanguage();
   
-  // Fetch why choose us content from admin panel
+  // Fetch why choose us content from admin panel with auto-refresh
   const { data: whyChooseUsContent = null } = useQuery<any>({
     queryKey: ['/api/why-choose-us'],
+    refetchInterval: 1000, // Refresh every second to show admin changes
   });
 
   // Get translated content based on current language

@@ -145,8 +145,10 @@ export default function WhyChooseUsManagement() {
         title: "Success",
         description: "Why Choose Us content updated successfully!",
       });
+      // Force refresh both admin and public APIs
       queryClient.invalidateQueries({ queryKey: ['/api/admin/why-choose-us'] });
       queryClient.invalidateQueries({ queryKey: ['/api/why-choose-us'] });
+      queryClient.refetchQueries({ queryKey: ['/api/why-choose-us'] });
     },
     onError: (error) => {
       toast({
@@ -352,7 +354,7 @@ export default function WhyChooseUsManagement() {
                 <Label>Workshop Features</Label>
                 <div className="space-y-2 mt-2">
                   {formData.workshopFeatures.map((feature, index) => (
-                    <div key={index} className="flex items-center gap-2 p-2 border rounded-lg bg-gray-50 dark:bg-gray-800">
+                    <div key={index} className="flex items-center gap-2 p-2 border rounded-lg bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600">
                       <Input
                         value={feature}
                         onChange={(e) => updateWorkshopFeature(index, e.target.value)}
@@ -389,7 +391,7 @@ export default function WhyChooseUsManagement() {
             </CardHeader>
             <CardContent className="space-y-4">
               {formData.features.map((feature, index) => (
-                <div key={index} className="p-4 border rounded-lg space-y-3 bg-gray-50 dark:bg-gray-800">
+                <div key={index} className="p-4 border rounded-lg space-y-3 bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 space-y-3">
                       <div className="flex items-center gap-3">
@@ -398,7 +400,7 @@ export default function WhyChooseUsManagement() {
                           <select
                             value={feature.icon}
                             onChange={(e) => updateFeature(index, 'icon', e.target.value)}
-                            className="p-2 border rounded text-sm bg-background text-foreground"
+                            className="p-2 border rounded text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                           >
                             <option value="fa-award">🏆 Award</option>
                             <option value="fa-calendar-alt">📅 Calendar</option>
@@ -415,6 +417,11 @@ export default function WhyChooseUsManagement() {
                             <option value="fa-rocket">🚀 Rocket</option>
                             <option value="fa-lightbulb">💡 Idea</option>
                             <option value="fa-fire">🔥 Fire</option>
+                            <option value="fa-wrench">🔧 Wrench</option>
+                            <option value="fa-car">🚗 Car</option>
+                            <option value="fa-industry">🏭 Industry</option>
+                            <option value="fa-clock">⏰ Clock</option>
+                            <option value="fa-medal">🏅 Medal</option>
                           </select>
                         </div>
                         <Input
@@ -427,7 +434,7 @@ export default function WhyChooseUsManagement() {
                       <textarea
                         value={feature.description}
                         onChange={(e) => updateFeature(index, 'description', e.target.value)}
-                        className="w-full p-3 border rounded-md bg-background text-foreground resize-none"
+                        className="w-full p-3 border rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 resize-none"
                         rows={2}
                         placeholder="Feature description"
                       />
