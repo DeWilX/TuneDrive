@@ -426,9 +426,12 @@ export function ServicesManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Services Management</h2>
-        <Button onClick={openCreateForm}>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-white">Services Management</h2>
+        <Button 
+          onClick={openCreateForm}
+          className="bg-accent-500 hover:bg-accent-600 text-white px-4 py-2"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Add Service
         </Button>
