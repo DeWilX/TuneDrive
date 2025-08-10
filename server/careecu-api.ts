@@ -31,7 +31,10 @@ interface CareEcuEngine {
   id: number;
   name?: string;
   var_title?: string;
+  var_alias?: string;
   year_id: number;
+  int_hp?: number;
+  int_nm?: number;
 }
 
 interface CareEcuStage {
@@ -359,9 +362,9 @@ export async function getEnginesFromYear(
       throw new CareEcuApiError("No engine data available from CareEcu API");
     }
     
-    // Extract engine names
+    // Extract engine names using var_alias and HP to make them unique
     const validEngines = engines.filter(
-      (engine) => engine && (engine.name || engine.var_title),
+      (engine) => engine && (engine.var_alias || engine.name || engine.var_title),
     );
     
     if (validEngines.length === 0) {
@@ -369,7 +372,12 @@ export async function getEnginesFromYear(
     }
     
     const engineNames = validEngines
-      .map((engine) => engine.name || engine.var_title)
+      .map((engine) => {
+        const baseName = engine.var_alias || engine.name || engine.var_title;
+        const hp = engine.int_hp;
+        // Create unique name by combining alias/name with HP if available
+        return hp ? `${baseName} (${hp} HP)` : baseName;
+      })
       .filter((name): name is string => Boolean(name))
       .sort();
     
@@ -472,10 +480,13 @@ export async function getTuningData(
       return null;
     }
 
-    // Find the specific engine
-    const engine = engines.find(
-      (e) => (e.name || e.var_title) === engineName
-    );
+    // Find the specific engine by matching the formatted name
+    const engine = engines.find((e) => {
+      const baseName = e.var_alias || e.name || e.var_title;
+      const hp = e.int_hp;
+      const formattedName = hp ? `${baseName} (${hp} HP)` : baseName;
+      return formattedName === engineName;
+    });
 
     if (!engine) {
       console.log(`Engine ${engineName} not found`);
