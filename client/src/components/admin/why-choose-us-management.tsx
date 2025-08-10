@@ -470,139 +470,184 @@ export default function WhyChooseUsManagement() {
 
         {/* Translations Tab */}
         <TabsContent value="translations" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Translation Management</CardTitle>
-              <CardDescription>
-                Translate content for different languages. Leave fields empty to use default content.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>Select Language</Label>
-                <select
-                  value={selectedLanguage}
-                  onChange={(e) => setSelectedLanguage(e.target.value)}
-                  className="w-full p-2 border rounded-md bg-background text-foreground"
-                >
-                  <option value="en">English (en)</option>
-                  <option value="lv">Latvian (lv)</option>
-                  <option value="ru">Russian (ru)</option>
-                  <option value="de">German (de)</option>
-                  <option value="fr">French (fr)</option>
-                  <option value="es">Spanish (es)</option>
-                </select>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-4">
-                <div>
-                  <Label>Title Translation</Label>
-                  <Input
-                    value={getCurrentTranslation().title || ''}
-                    onChange={(e) => updateTranslation('title', e.target.value)}
-                    placeholder={`Translation for: ${formData.title}`}
-                  />
-                </div>
-
-                <div>
-                  <Label>Description Translation</Label>
-                  <Textarea
-                    value={getCurrentTranslation().description || ''}
-                    onChange={(e) => updateTranslation('description', e.target.value)}
-                    placeholder={`Translation for: ${formData.description}`}
-                    rows={3}
-                  />
-                </div>
-
-                <div>
-                  <Label>Workshop Title Translation</Label>
-                  <Input
-                    value={getCurrentTranslation().workshopTitle || ''}
-                    onChange={(e) => updateTranslation('workshopTitle', e.target.value)}
-                    placeholder={`Translation for: ${formData.workshopTitle}`}
-                  />
-                </div>
-
-                <div>
-                  <Label>Workshop Description Translation</Label>
-                  <Textarea
-                    value={getCurrentTranslation().workshopDescription || ''}
-                    onChange={(e) => updateTranslation('workshopDescription', e.target.value)}
-                    placeholder={`Translation for: ${formData.workshopDescription}`}
-                    rows={3}
-                  />
-                </div>
-
-                <div>
-                  <Label>Workshop Features Translation</Label>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Translate each workshop feature (one per line):
-                  </p>
-                  <Textarea
-                    value={getCurrentTranslation().workshopFeatures?.join('\n') || ''}
-                    onChange={(e) => updateTranslation('workshopFeatures', e.target.value.split('\n').filter(line => line.trim()))}
-                    placeholder={formData.workshopFeatures.join('\n')}
-                    rows={formData.workshopFeatures.length + 1}
-                  />
-                </div>
-
-                <div>
-                  <Label>Features Translation</Label>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Translate the main features. Each feature needs icon, title, and description.
-                  </p>
-                  {formData.features.map((feature, index) => (
-                    <div key={index} className="border rounded-lg p-4 space-y-3">
-                      <div className="flex items-center gap-2">
-                        <i className={`fas ${feature.icon} text-accent-500`}></i>
-                        <span className="font-medium">Feature {index + 1}</span>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div>
-                          <Label>Title Translation</Label>
-                          <Input
-                            value={getCurrentTranslation().features?.[index]?.title || ''}
-                            onChange={(e) => {
-                              const currentFeatures = getCurrentTranslation().features || [];
-                              const updatedFeatures = [...currentFeatures];
-                              updatedFeatures[index] = {
-                                ...updatedFeatures[index],
-                                icon: feature.icon,
-                                title: e.target.value,
-                                description: updatedFeatures[index]?.description || ''
-                              };
-                              updateTranslation('features', updatedFeatures);
-                            }}
-                            placeholder={`Original: ${feature.title}`}
-                          />
-                        </div>
-                        <div>
-                          <Label>Description Translation</Label>
-                          <Input
-                            value={getCurrentTranslation().features?.[index]?.description || ''}
-                            onChange={(e) => {
-                              const currentFeatures = getCurrentTranslation().features || [];
-                              const updatedFeatures = [...currentFeatures];
-                              updatedFeatures[index] = {
-                                ...updatedFeatures[index],
-                                icon: feature.icon,
-                                title: updatedFeatures[index]?.title || '',
-                                description: e.target.value
-                              };
-                              updateTranslation('features', updatedFeatures);
-                            }}
-                            placeholder={`Original: ${feature.description}`}
-                          />
-                        </div>
-                      </div>
-                    </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Language Selector */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <span>🌍</span>
+                  Choose Language
+                </CardTitle>
+                <CardDescription>
+                  Select a language to add or edit translations
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { code: 'en', name: 'English', flag: '🇺🇸' },
+                    { code: 'lv', name: 'Latvian', flag: '🇱🇻' },
+                    { code: 'ru', name: 'Russian', flag: '🇷🇺' },
+                    { code: 'de', name: 'German', flag: '🇩🇪' },
+                    { code: 'fr', name: 'French', flag: '🇫🇷' },
+                    { code: 'es', name: 'Spanish', flag: '🇪🇸' }
+                  ].map((lang) => (
+                    <Button
+                      key={lang.code}
+                      variant={selectedLanguage === lang.code ? "default" : "outline"}
+                      className={`p-4 h-auto flex flex-col gap-2 ${
+                        selectedLanguage === lang.code 
+                          ? 'bg-accent-500 text-white border-accent-500' 
+                          : 'hover:bg-accent-50 hover:border-accent-300'
+                      }`}
+                      onClick={() => setSelectedLanguage(lang.code)}
+                    >
+                      <span className="text-2xl">{lang.flag}</span>
+                      <span className="text-sm font-medium">{lang.name}</span>
+                    </Button>
                   ))}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+            {/* Translation Status */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <span>📊</span>
+                  Translation Progress
+                </CardTitle>
+                <CardDescription>
+                  Track which languages have been translated
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {[
+                    { code: 'en', name: 'English', flag: '🇺🇸' },
+                    { code: 'lv', name: 'Latvian', flag: '🇱🇻' },
+                    { code: 'ru', name: 'Russian', flag: '🇷🇺' },
+                    { code: 'de', name: 'German', flag: '🇩🇪' },
+                    { code: 'fr', name: 'French', flag: '🇫🇷' },
+                    { code: 'es', name: 'Spanish', flag: '🇪🇸' }
+                  ].map((lang) => {
+                    const hasTranslation = formData.translations?.[lang.code]?.title || formData.translations?.[lang.code]?.description;
+                    return (
+                      <div key={lang.code} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <span className="text-lg">{lang.flag}</span>
+                          <span className="font-medium">{lang.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {hasTranslation ? (
+                            <span className="text-green-600 text-sm font-medium flex items-center gap-1">
+                              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                              Translated
+                            </span>
+                          ) : (
+                            <span className="text-gray-500 text-sm flex items-center gap-1">
+                              <span className="w-2 h-2 bg-gray-300 rounded-full"></span>
+                              Not translated
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Translation Form */}
+          {selectedLanguage && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                  <span className="text-2xl">
+                    {selectedLanguage === 'en' ? '🇺🇸' : 
+                     selectedLanguage === 'lv' ? '🇱🇻' : 
+                     selectedLanguage === 'ru' ? '🇷🇺' : 
+                     selectedLanguage === 'de' ? '🇩🇪' : 
+                     selectedLanguage === 'fr' ? '🇫🇷' : '🇪🇸'}
+                  </span>
+                  Translate to {selectedLanguage === 'en' ? 'English' : 
+                              selectedLanguage === 'lv' ? 'Latvian' : 
+                              selectedLanguage === 'ru' ? 'Russian' : 
+                              selectedLanguage === 'de' ? 'German' : 
+                              selectedLanguage === 'fr' ? 'French' : 'Spanish'}
+                </CardTitle>
+                <CardDescription>
+                  Fill in the translations below. Leave blank to use the original content.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Title Translation */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Original Title</Label>
+                    <div className="p-3 bg-gray-50 border rounded-md text-sm text-gray-700">
+                      {formData.title}
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor={`title-${selectedLanguage}`}>Translation</Label>
+                    <Input
+                      id={`title-${selectedLanguage}`}
+                      value={formData.translations?.[selectedLanguage]?.title || ''}
+                      onChange={(e) => updateTranslation('title', e.target.value)}
+                      placeholder={`Title in ${selectedLanguage.toUpperCase()}`}
+                      className="bg-background text-foreground border-border"
+                    />
+                  </div>
+                </div>
+
+                {/* Description Translation */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Original Description</Label>
+                    <div className="p-3 bg-gray-50 border rounded-md text-sm text-gray-700 min-h-[80px]">
+                      {formData.description}
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor={`description-${selectedLanguage}`}>Translation</Label>
+                    <Textarea
+                      id={`description-${selectedLanguage}`}
+                      value={formData.translations?.[selectedLanguage]?.description || ''}
+                      onChange={(e) => updateTranslation('description', e.target.value)}
+                      placeholder={`Description in ${selectedLanguage.toUpperCase()}`}
+                      rows={3}
+                      className="bg-background text-foreground border-border"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-4 border-t">
+                  <p className="text-sm text-gray-600">
+                    💡 Tip: Translations are automatically saved as you type
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setFormData(prev => ({
+                        ...prev,
+                        translations: {
+                          ...prev.translations,
+                          [selectedLanguage]: {
+                            title: '',
+                            description: ''
+                          }
+                        }
+                      }));
+                    }}
+                  >
+                    Clear Translation
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>
