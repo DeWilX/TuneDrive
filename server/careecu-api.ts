@@ -1,7 +1,7 @@
-// CareEcuSoft API integration
-const API_BASE_URL = 'https://api.carecusoft.com';
-const API_KEY = '5c78cfd1ca4ff97888f564558177b3e7';
-const LANG = 'lv';
+// CareEcuSoft API integration with caching
+const API_BASE_URL = "https://api.carecusoft.com";
+const API_KEY = "5c78cfd1ca4ff97888f564558177b3e7";
+const LANG = "lv";
 
 interface CareEcuBrand {
   id: number;
@@ -53,25 +53,55 @@ export interface TuningData {
 }
 
 class CareEcuApiError extends Error {
-  constructor(message: string, public statusCode?: number) {
+  constructor(
+    message: string,
+    public statusCode?: number,
+  ) {
     super(message);
-    this.name = 'CareEcuApiError';
+    this.name = "CareEcuApiError";
   }
+}
+
+// Simple in-memory cache object
+const cache = new Map<string, any>();
+
+// Cache TTL (time to live) in milliseconds (e.g., 10 minutes)
+const CACHE_TTL = 10 * 60 * 1000;
+
+function getCacheKey(functionName: string, params: any[]): string {
+  return `${functionName}:${JSON.stringify(params)}`;
+}
+
+async function cachedApiRequest<T>(fullUrl: string, cacheKey: string): Promise<T> {
+  const cached = cache.get(cacheKey);
+  const now = Date.now();
+  if (cached && now - cached.timestamp < CACHE_TTL) {
+    // Return cached data if not expired
+    return cached.data as T;
+  }
+
+  // If no cache or expired, fetch fresh data
+  const data = await apiRequest<T>(fullUrl);
+  cache.set(cacheKey, { data, timestamp: now });
+  return data;
 }
 
 async function apiRequest<T>(fullUrl: string): Promise<T> {
   try {
     const response = await fetch(fullUrl, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Content-Type': 'application/json',
-      }
+        "Content-Type": "application/json",
+      },
     });
-    
+
     if (!response.ok) {
-      throw new CareEcuApiError(`API request failed: ${response.status} ${response.statusText}`, response.status);
+      throw new CareEcuApiError(
+        `API request failed: ${response.status} ${response.statusText}`,
+        response.status,
+      );
     }
-    
+
     const data = await response.json();
     return data;
   } catch (error) {
@@ -83,126 +113,307 @@ async function apiRequest<T>(fullUrl: string): Promise<T> {
 }
 
 export async function getBrands(): Promise<string[]> {
+  const cacheKey = getCacheKey("getBrands", []);
   try {
-    const response = await apiRequest<any>('https://api.carecusoft.com/en/v1/chiptuning?key=5c78cfd1ca4ff97888f564558177b3e7');
-    
-    // Handle different possible response structures
+    const response = await cachedApiRequest<any>(
+      `https://api.carecusoft.com/en/v1/chiptuning?key=${API_KEY}`,
+      cacheKey,
+    );
+
     let brands: CareEcuBrand[] = [];
     if (Array.isArray(response)) {
-      brands = response.filter(item => item && typeof item === 'object' && (item.name || item.var_title));
+      brands = response.filter(
+        (item) =>
+          item && typeof item === "object" && (item.name || item.var_title),
+      );
     } else if (response && response.data && Array.isArray(response.data)) {
-      brands = response.data.filter(item => item && typeof item === 'object' && (item.name || item.var_title));
+      brands = response.data.filter(
+        (item) =>
+          item && typeof item === "object" && (item.name || item.var_title),
+      );
     } else if (response && response.brands && Array.isArray(response.brands)) {
-      brands = response.brands.filter(item => item && typeof item === 'object' && (item.name || item.var_title));
+      brands = response.brands.filter(
+        (item) =>
+          item && typeof item === "object" && (item.name || item.var_title),
+      );
     }
-    
-    // CareEcu API has unified system - all vehicle types in one endpoint
-    // If no valid brands found, throw error to use database fallback
+
     if (brands.length === 0) {
-      console.log('CareEcu API returned data but no valid brands found, using database fallback');
-      throw new CareEcuApiError('No valid brand data received from API');
+      console.log(
+        "CareEcu API returned data but no valid brands found, using database fallback",
+      );
+      throw new CareEcuApiError("No valid brand data received from API");
     }
-    
-    console.log(`Successfully fetched ${brands.length} brands from CareEcu API`);
-    return brands.map(brand => brand.name || brand.var_title).sort();
+
+    console.log(
+      `Successfully fetched ${brands.length} brands from CareEcu API`,
+    );
+    return brands.map((brand) => brand.name || brand.var_title).sort();
   } catch (error) {
-    console.error('Failed to fetch brands from CareEcu API:', error);
-    throw new CareEcuApiError('Failed to fetch vehicle brands');
+    console.error("Failed to fetch brands from CareEcu API:", error);
+    throw new CareEcuApiError("Failed to fetch vehicle brands");
   }
 }
 
 export async function getModels(brandName: string): Promise<string[]> {
+  const cacheKey = getCacheKey("getModels", [brandName.toLowerCase()]);
   try {
-    // First get all brands to find the brand ID
-    const brands = await apiRequest<CareEcuBrand[]>('https://api.carecusoft.com/en/v1/chiptuning?key=5c78cfd1ca4ff97888f564558177b3e7');
-    const brand = brands.find(b => (b.name || b.var_title).toLowerCase() === brandName.toLowerCase());
-    
+    // Get all brands (cached)
+    const brands = await cachedApiRequest<CareEcuBrand[]>(
+      `https://api.carecusoft.com/en/v1/chiptuning?key=${API_KEY}`,
+      getCacheKey("getBrands", []),
+    );
+    const brand = brands.find(
+      (b) => (b.name || b.var_title).toLowerCase() === brandName.toLowerCase(),
+    );
+
     if (!brand) {
       throw new CareEcuApiError(`Brand "${brandName}" not found`);
     }
-    
-    const models = await apiRequest<CareEcuModel[]>(`https://api.carecusoft.com/lv/v1/tuning/models/${brand.id}?key=5c78cfd1ca4ff97888f564558177b3e7`);
-    const validModels = models.filter(model => model && (model.name || model.var_title));
-    console.log(`Successfully fetched models for ${brandName} from CareEcu API: ${validModels.length}`);
-    return validModels.map(model => model.name || model.var_title).sort();
+
+    const models = await cachedApiRequest<CareEcuModel[]>(
+      `${API_BASE_URL}/lv/v1/tuning/models/${brand.id}?key=${API_KEY}`,
+      cacheKey,
+    );
+    const validModels = models.filter(
+      (model) => model && (model.name || model.var_title),
+    );
+    console.log(
+      `Successfully fetched models for ${brandName} from CareEcu API: ${validModels.length}`,
+    );
+    return validModels.map((model) => model.name || model.var_title).sort();
   } catch (error) {
     console.error(`Failed to fetch models for brand ${brandName}:`, error);
-    throw error instanceof CareEcuApiError ? error : new CareEcuApiError('Failed to fetch vehicle models');
+    throw error instanceof CareEcuApiError
+      ? error
+      : new CareEcuApiError("Failed to fetch vehicle models");
   }
 }
 
-export async function getYears(brandName: string, modelName: string): Promise<string[]> {
+export async function getYears(
+  brandName: string,
+  modelName: string,
+): Promise<string[]> {
+  const cacheKey = getCacheKey("getYears", [
+    brandName.toLowerCase(),
+    modelName.toLowerCase(),
+  ]);
   try {
-    // Get brand ID
-    const brands = await apiRequest<CareEcuBrand[]>('https://api.carecusoft.com/en/v1/chiptuning?key=5c78cfd1ca4ff97888f564558177b3e7');
-    const brand = brands.find(b => (b.name || b.var_title).toLowerCase() === brandName.toLowerCase());
-    
+    // Get brands (cached)
+    const brands = await cachedApiRequest<CareEcuBrand[]>(
+      `https://api.carecusoft.com/en/v1/chiptuning?key=${API_KEY}`,
+      getCacheKey("getBrands", []),
+    );
+    const brand = brands.find(
+      (b) => (b.name || b.var_title).toLowerCase() === brandName.toLowerCase(),
+    );
+
     if (!brand) {
       throw new CareEcuApiError(`Brand "${brandName}" not found`);
     }
-    
-    // Get model ID
-    const models = await apiRequest<CareEcuModel[]>(`https://api.carecusoft.com/lv/v1/tuning/models/${brand.id}?key=5c78cfd1ca4ff97888f564558177b3e7`);
-    const model = models.find(m => (m.name || m.var_title)?.toLowerCase() === modelName.toLowerCase());
-    
+
+    // Get models (cached)
+    const models = await cachedApiRequest<CareEcuModel[]>(
+      `${API_BASE_URL}/lv/v1/tuning/models/${brand.id}?key=${API_KEY}`,
+      getCacheKey("getModels", [brandName.toLowerCase()]),
+    );
+    const model = models.find(
+      (m) => (m.name || m.var_title)?.toLowerCase() === modelName.toLowerCase(),
+    );
+
     if (!model) {
-      throw new CareEcuApiError(`Model "${modelName}" not found for brand "${brandName}"`);
+      throw new CareEcuApiError(
+        `Model "${modelName}" not found for brand "${brandName}"`,
+      );
     }
-    
-    const years = await apiRequest<CareEcuYear[]>(`https://api.carecusoft.com/lv/v1/tuning/years/${model.id}?key=5c78cfd1ca4ff97888f564558177b3e7`);
-    const validYears = years.filter(year => year && (year.year || year.var_title));
-    console.log(`Successfully fetched years for ${brandName} ${modelName} from CareEcu API: ${validYears.length}`);
-    return validYears.map(year => year.year || year.var_title).sort().reverse(); // Most recent years first
+
+    const years = await cachedApiRequest<CareEcuYear[]>(
+      `${API_BASE_URL}/lv/v1/tuning/years/${model.id}?key=${API_KEY}`,
+      cacheKey,
+    );
+    const validYears = years.filter(
+      (year) => year && (year.year || year.var_title),
+    );
+    console.log(
+      `Successfully fetched years for ${brandName} ${modelName} from CareEcu API: ${validYears.length}`,
+    );
+    return validYears
+      .map((year) => year.year || year.var_title)
+      .sort()
+      .reverse();
   } catch (error) {
-    console.error(`Failed to fetch years for ${brandName} ${modelName}:`, error);
-    throw error instanceof CareEcuApiError ? error : new CareEcuApiError('Failed to fetch vehicle years');
+    console.error(
+      `Failed to fetch years for ${brandName} ${modelName}:`,
+      error,
+    );
+    throw error instanceof CareEcuApiError
+      ? error
+      : new CareEcuApiError("Failed to fetch vehicle years");
   }
 }
 
-export async function getEngines(brandName: string, modelName: string, year: string): Promise<string[]> {
+export async function getEngines(
+  brandName: string,
+  modelName: string,
+  year: string,
+): Promise<string[]> {
+  const cacheKey = getCacheKey("getEngines", [
+    brandName.toLowerCase(),
+    modelName.toLowerCase(),
+    year,
+  ]);
   try {
-    // Get brand ID
-    const brands = await apiRequest<CareEcuBrand[]>('https://api.carecusoft.com/en/v1/chiptuning?key=5c78cfd1ca4ff97888f564558177b3e7');
-    const brand = brands.find(b => (b.name || b.var_title).toLowerCase() === brandName.toLowerCase());
-    
+    // Get brands (cached)
+    const brands = await cachedApiRequest<CareEcuBrand[]>(
+      `https://api.carecusoft.com/en/v1/chiptuning?key=${API_KEY}`,
+      getCacheKey("getBrands", []),
+    );
+    const brand = brands.find(
+      (b) => (b.name || b.var_title).toLowerCase() === brandName.toLowerCase(),
+    );
+
     if (!brand) {
       throw new CareEcuApiError(`Brand "${brandName}" not found`);
     }
-    
-    // Get model ID
-    const models = await apiRequest<CareEcuModel[]>(`https://api.carecusoft.com/lv/v1/tuning/models/${brand.id}?key=5c78cfd1ca4ff97888f564558177b3e7`);
-    const model = models.find(m => (m.name || m.var_title)?.toLowerCase() === modelName.toLowerCase());
-    
+
+    // Get models (cached)
+    const models = await cachedApiRequest<CareEcuModel[]>(
+      `${API_BASE_URL}/lv/v1/tuning/models/${brand.id}?key=${API_KEY}`,
+      getCacheKey("getModels", [brandName.toLowerCase()]),
+    );
+    const model = models.find(
+      (m) => (m.name || m.var_title)?.toLowerCase() === modelName.toLowerCase(),
+    );
+
     if (!model) {
-      throw new CareEcuApiError(`Model "${modelName}" not found for brand "${brandName}"`);
+      throw new CareEcuApiError(
+        `Model "${modelName}" not found for brand "${brandName}"`,
+      );
     }
-    
-    // Get year ID
-    const years = await apiRequest<CareEcuYear[]>(`https://api.carecusoft.com/lv/v1/tuning/years/${model.id}?key=5c78cfd1ca4ff97888f564558177b3e7`);
-    const yearObj = years.find(y => (y.year || y.var_title) === year);
-    
+
+    // Get years (cached)
+    const years = await cachedApiRequest<CareEcuYear[]>(
+      `${API_BASE_URL}/lv/v1/tuning/years/${model.id}?key=${API_KEY}`,
+      getCacheKey("getYears", [brandName.toLowerCase(), modelName.toLowerCase()]),
+    );
+    const yearObj = years.find((y) => (y.year || y.var_title) === year);
+
     if (!yearObj) {
-      throw new CareEcuApiError(`Year "${year}" not found for ${brandName} ${modelName}`);
+      throw new CareEcuApiError(
+        `Year "${year}" not found for ${brandName} ${modelName}`,
+      );
     }
-    
-    // Get stages (engines) for this year - this is the stages endpoint
-    const stages = await apiRequest<CareEcuEngine[]>(`https://api.carecusoft.com/lv/v1/tuning/stages/${yearObj.id}?key=5c78cfd1ca4ff97888f564558177b3e7`);
-    const validEngines = stages.filter(stage => stage && (stage.name || stage.var_title));
-    console.log(`Successfully fetched engines (stages) for ${brandName} ${modelName} ${year} from CareEcu API: ${validEngines.length}`);
-    return validEngines.map(stage => stage.name || stage.var_title).sort();
+
+    // Get stages (engines)
+    const stages = await cachedApiRequest<CareEcuEngine[]>(
+      `${API_BASE_URL}/lv/v1/tuning/stages/${yearObj.id}?key=${API_KEY}`,
+      cacheKey,
+    );
+    const validStages = stages.filter(
+      (stage) => stage && (stage.name || stage.var_title),
+    );
+    console.log(
+      `Successfully fetched engines for ${brandName} ${modelName} ${year}: ${validStages.length}`,
+    );
+    return validStages.map((stage) => stage.name || stage.var_title).sort();
   } catch (error) {
-    console.error(`Failed to fetch engines for ${brandName} ${modelName} ${year}:`, error);
-    throw error instanceof CareEcuApiError ? error : new CareEcuApiError('Failed to fetch vehicle engines');
+    console.error(
+      `Failed to fetch engines for ${brandName} ${modelName} ${year}:`,
+      error,
+    );
+    throw error instanceof CareEcuApiError
+      ? error
+      : new CareEcuApiError("Failed to fetch vehicle engines");
   }
 }
 
-export async function getTuningData(brandName: string, modelName: string, year: string, engineName: string): Promise<TuningData> {
+export async function getTuningData(
+  brandName: string,
+  modelName: string,
+  year: string,
+  engineName: string,
+): Promise<TuningData | null> {
+  const cacheKey = getCacheKey("getTuningData", [
+    brandName.toLowerCase(),
+    modelName.toLowerCase(),
+    year,
+    engineName.toLowerCase(),
+  ]);
   try {
-    // Note: The stages endpoint requires stage_id, but we need to determine how to get stage_ids
-    // For now, this function will throw an error to use database fallback
-    throw new CareEcuApiError('Tuning data structure needs clarification from API documentation');
+    // Get brands (cached)
+    const brands = await cachedApiRequest<CareEcuBrand[]>(
+      `https://api.carecusoft.com/en/v1/chiptuning?key=${API_KEY}`,
+      getCacheKey("getBrands", []),
+    );
+    const brand = brands.find(
+      (b) => (b.name || b.var_title).toLowerCase() === brandName.toLowerCase(),
+    );
+
+    if (!brand) {
+      throw new CareEcuApiError(`Brand "${brandName}" not found`);
+    }
+
+    // Get models (cached)
+    const models = await cachedApiRequest<CareEcuModel[]>(
+      `${API_BASE_URL}/lv/v1/tuning/models/${brand.id}?key=${API_KEY}`,
+      getCacheKey("getModels", [brandName.toLowerCase()]),
+    );
+    const model = models.find(
+      (m) => (m.name || m.var_title)?.toLowerCase() === modelName.toLowerCase(),
+    );
+
+    if (!model) {
+      throw new CareEcuApiError(
+        `Model "${modelName}" not found for brand "${brandName}"`,
+      );
+    }
+
+    // Get years (cached)
+    const years = await cachedApiRequest<CareEcuYear[]>(
+      `${API_BASE_URL}/lv/v1/tuning/years/${model.id}?key=${API_KEY}`,
+      getCacheKey("getYears", [brandName.toLowerCase(), modelName.toLowerCase()]),
+    );
+    const yearObj = years.find((y) => (y.year || y.var_title) === year);
+
+    if (!yearObj) {
+      throw new CareEcuApiError(
+        `Year "${year}" not found for ${brandName} ${modelName}`,
+      );
+    }
+
+    // Get stages (cached)
+    const stages = await cachedApiRequest<CareEcuStage[]>(
+      `${API_BASE_URL}/lv/v1/tuning/stages/${yearObj.id}?key=${API_KEY}`,
+      getCacheKey("getEngines", [
+        brandName.toLowerCase(),
+        modelName.toLowerCase(),
+        year,
+      ]),
+    );
+
+    if (!stages || stages.length === 0) {
+      return null;
+    }
+
+    const stage = stages.find(
+      (s) => (s.name || "").toLowerCase() === engineName.toLowerCase(),
+    );
+    if (!stage) {
+      return null;
+    }
+
+    return {
+      originalPower: stage.hp_original,
+      originalTorque: stage.nm_original,
+      stage1Power: stage.hp_tuned,
+      stage1Torque: stage.nm_tuned,
+      // Optional: if you have stage 2 data add it here
+    };
   } catch (error) {
-    console.error(`Failed to fetch tuning data for ${brandName} ${modelName} ${year} ${engineName}:`, error);
-    throw error instanceof CareEcuApiError ? error : new CareEcuApiError('Failed to fetch tuning data');
+    console.error(
+      `Failed to fetch tuning data for ${brandName} ${modelName} ${year} ${engineName}:`,
+      error,
+    );
+    return null;
   }
 }

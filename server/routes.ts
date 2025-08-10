@@ -117,55 +117,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Power data endpoint with CareEcu API and database fallback
-  app.get("/api/vehicles/power/:vehicleType/:brand/:model/:generation/:engine", async (req, res) => {
-    try {
-      const { vehicleType, brand, model, generation, engine } = req.params;
-      
-      const decodedGeneration = decodeURIComponent(generation);
-      const decodedEngine = decodeURIComponent(engine);
-      
-      // Try CareEcu API first
-      try {
-        const tuningData = await getTuningData(brand, model, decodedGeneration, decodedEngine);
-        console.log(`Successfully fetched power data for ${brand} ${model} ${decodedGeneration} ${decodedEngine} from CareEcu API`);
-        res.json(tuningData);
-        return;
-      } catch (apiError) {
-        console.warn(`CareEcu API failed for power data of ${brand} ${model} ${decodedGeneration} ${decodedEngine}, falling back to static database:`, apiError);
-      }
-      
-      // Fallback to static database
-      const vehicle = await storage.getVehicleBySpecs(brand, model, decodedGeneration, decodedEngine, vehicleType);
-      
-      if (!vehicle) {
-        return res.status(404).json({ message: "Vehicle not found" });
-      }
-      
-      const powerData = {
-        originalPower: vehicle.originalPower,
-        originalTorque: vehicle.originalTorque,
-        stage1Power: vehicle.stage1Power,
-        stage1Torque: vehicle.stage1Torque,
-        stage2Power: vehicle.stage2Power,
-        stage2Torque: vehicle.stage2Torque
-      };
-      
-      res.json(powerData);
-    } catch (error) {
-      console.error('Power API error:', error);
-      res.status(500).json({ message: "Failed to fetch power data" });
-    }
-  });
+// Power data endpoint with CareEcu API and database fallback
+app.get("/api/vehicles/power/:vehicleType/:brand/:model/:generation/:engine", async (req, res) => {
+  try {
+    const { vehicleType, brand, model, generation, engine } = req.params;
 
-  // Legacy variants endpoint - not used with CareEcu API structure
-  app.get("/api/vehicles/variants/:vehicleType/:brand/:model/:generation/:engine", async (req, res) => {
+    const decodedGeneration = decodeURIComponent(generation);
+    const decodedEngine = decodeURIComponent(engine);
+
+    // Try CareEcu API first
     try {
-      // CareEcu API doesn't have variants, return empty array
-      res.json([]);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch variants" });
+      const tuningData = await getTuningData(brand, model, decodedGeneration, decodedEngine);
+      console.log(`Successfully fetched power data for ${brand} ${model} ${decodedGeneration} ${decodedEngine} from CareEcu API`);
+      return res.json(tuningData);
+    } catch (apiError) {
+      console.warn(`CareEcu API failed for power data of ${brand} ${model} ${decodedGeneration} ${decodedEngine}, falling back to static database:`, apiError);
     }
-  });
+
+    // Fallback to static database
+    const vehicle = await storage.getVehicleBySpecs(brand, model, decodedGeneration, decodedEngine, vehicleType);
+
+    if (!vehicle) {
+      return res.status(404).json({ message: "Vehicle not found" });
+    }
+
+    const powerData = {
+      originalPower: vehicle.originalPower || null,
+      originalTorque: vehicle.originalTorque || null,
+      stage1Power: vehicle.stage1Power || null,
+      stage1Torque: vehicle.stage1Torque || null,
+      stage2Power: vehicle.stage2Power || null,
+      stage2Torque: vehicle.stage2Torque || null
+    };
+
+    return res.json(powerData);
+  } catch (error) {
+    console.error('Power API error:', error);
+    res.status(500).json({ message: "Failed to fetch power data" });
+  }
+});
+
+// Legacy variants endpoint - not used with CareEcu API structure
+app.get("/api/vehicles/variants/:vehicleType/:brand/:model/:generation/:engine", (req, res) => {
+  // CareEcu API doesn't have variants, always return empty array
+  res.json([]);
+});
+
 
   // Legacy single vehicle endpoint - not used with CareEcu API structure  
   app.get("/api/vehicles/:vehicleType/:brand/:model/:generation/:engine/:variant", async (req, res) => {

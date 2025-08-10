@@ -44,12 +44,11 @@ export default function PowerChecker() {
     enabled: !!selectedModel && !!selectedBrand && !!vehicleType,
   });
 
-  // Fetch engines based on generation, model, brand and vehicle type
-  const { data: engines = [] } = useQuery({
+  const { data: engines = [] } = useQuery<string[]>({
     queryKey: [`/api/vehicles/engines/${vehicleType}/${selectedBrand}/${selectedModel}/${selectedGeneration}`],
     enabled: !!selectedGeneration && !!selectedModel && !!selectedBrand && !!vehicleType,
   });
-
+  
   const handleCheckPower = async () => {
     if (!selectedEngine || !selectedGeneration || !selectedModel || !selectedBrand || !vehicleType) return;
 
