@@ -47,6 +47,7 @@ export default function AdminDashboard() {
       
       // Store the authenticated fetch function for use by queries
       (window as any).authFetch = authFetch;
+      (window as any).authToken = token;
     }
   }, [token]);
 
