@@ -66,7 +66,7 @@ export const serviceItems = pgTable("service_items", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: text("title").notNull(),
   description: text("description").notNull(),
-  translations: jsonb("translations"), // Object with language codes as keys for title/description
+  translations: jsonb("translations"), // Object with language codes as keys for title/description/features/price
   icon: text("icon").notNull(),
   image: text("image"),
   features: jsonb("features").notNull(), // array of feature strings

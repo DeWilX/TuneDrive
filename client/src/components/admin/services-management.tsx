@@ -46,6 +46,8 @@ interface ServiceFormData {
     [languageCode: string]: {
       title: string;
       description: string;
+      features: string[];
+      price: string;
     };
   };
 }
@@ -212,7 +214,7 @@ export function ServicesManagement() {
       features: [""],
       price: "",
       order: services.length + 1,
-      translations: {} as { [languageCode: string]: { title: string; description: string; } }
+      translations: {} as { [languageCode: string]: { title: string; description: string; features: string[]; price: string; } }
     });
     setSelectedService(null);
   };
@@ -227,7 +229,7 @@ export function ServicesManagement() {
       features: Array.isArray(service.features) ? service.features : [""],
       price: service.price,
       order: service.order,
-      translations: (service.translations as { [languageCode: string]: { title: string; description: string; } }) || ({} as { [languageCode: string]: { title: string; description: string; } })
+      translations: (service.translations as { [languageCode: string]: { title: string; description: string; features: string[]; price: string; } }) || ({} as { [languageCode: string]: { title: string; description: string; features: string[]; price: string; } })
     });
     setIsFormOpen(true);
   };
@@ -280,7 +282,7 @@ export function ServicesManagement() {
     }
   };
 
-  const updateTranslation = (languageCode: string, field: 'title' | 'description', value: string) => {
+  const updateTranslation = (languageCode: string, field: 'title' | 'description' | 'price', value: string) => {
     setFormData(prev => ({
       ...prev,
       translations: {
@@ -288,10 +290,83 @@ export function ServicesManagement() {
         [languageCode]: {
           title: prev.translations?.[languageCode]?.title || "",
           description: prev.translations?.[languageCode]?.description || "",
+          features: prev.translations?.[languageCode]?.features || [],
+          price: prev.translations?.[languageCode]?.price || "",
           [field]: value
         }
       }
     }));
+  };
+
+  const updateTranslationFeature = (languageCode: string, featureIndex: number, value: string) => {
+    setFormData(prev => {
+      const currentTranslation = prev.translations?.[languageCode] || {
+        title: "",
+        description: "",
+        features: [],
+        price: ""
+      };
+      const newFeatures = [...currentTranslation.features];
+      newFeatures[featureIndex] = value;
+      
+      return {
+        ...prev,
+        translations: {
+          ...prev.translations,
+          [languageCode]: {
+            ...currentTranslation,
+            features: newFeatures
+          }
+        }
+      };
+    });
+  };
+
+  const addTranslationFeature = (languageCode: string) => {
+    setFormData(prev => {
+      const currentTranslation = prev.translations?.[languageCode] || {
+        title: "",
+        description: "",
+        features: [],
+        price: ""
+      };
+      
+      return {
+        ...prev,
+        translations: {
+          ...prev.translations,
+          [languageCode]: {
+            ...currentTranslation,
+            features: [...currentTranslation.features, ""]
+          }
+        }
+      };
+    });
+  };
+
+  const removeTranslationFeature = (languageCode: string, featureIndex: number) => {
+    setFormData(prev => {
+      const currentTranslation = prev.translations?.[languageCode] || {
+        title: "",
+        description: "",
+        features: [],
+        price: ""
+      };
+      
+      if (currentTranslation.features.length > 1) {
+        return {
+          ...prev,
+          translations: {
+            ...prev.translations,
+            [languageCode]: {
+              ...currentTranslation,
+              features: currentTranslation.features.filter((_, i) => i !== featureIndex)
+            }
+          }
+        };
+      }
+      return prev;
+    });
   };
 
   const handleGetUploadParameters = async () => {
@@ -575,7 +650,7 @@ export function ServicesManagement() {
                   <CardHeader>
                     <CardTitle className="text-white text-sm">{language.name} ({language.code})</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className="space-y-4">
                     <div>
                       <Label className="text-gray-300">Title</Label>
                       <Input
@@ -594,6 +669,48 @@ export function ServicesManagement() {
                         placeholder={`Enter description in ${language.name}`}
                         rows={2}
                       />
+                    </div>
+                    <div>
+                      <Label className="text-gray-300">Price</Label>
+                      <Input
+                        value={formData.translations?.[language.code]?.price || ""}
+                        onChange={(e) => updateTranslation(language.code, 'price', e.target.value)}
+                        className="bg-gray-700 border-gray-600 text-white"
+                        placeholder={`Enter price in ${language.name} (e.g., From €250)`}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-gray-300">Features</Label>
+                      <div className="space-y-2">
+                        {(formData.translations?.[language.code]?.features || []).map((feature, index) => (
+                          <div key={index} className="flex gap-2">
+                            <Input
+                              value={feature}
+                              onChange={(e) => updateTranslationFeature(language.code, index, e.target.value)}
+                              placeholder={`Feature description in ${language.name}`}
+                              className="bg-gray-700 border-gray-600 text-white"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeTranslationFeature(language.code, index)}
+                              disabled={(formData.translations?.[language.code]?.features || []).length === 1}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => addTranslationFeature(language.code)}
+                          className="text-xs"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Feature
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
