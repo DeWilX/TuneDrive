@@ -5,7 +5,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQuery } from "@tanstack/react-query";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { useLanguage } from "@/hooks/useLanguage";
-import { Car, Truck, Tractor } from "lucide-react";
 
 interface VehiclePower {
   originalPower: number;
@@ -17,7 +16,7 @@ interface VehiclePower {
 }
 
 export default function PowerChecker() {
-  const [vehicleType, setVehicleType] = useState<string>("");
+  const vehicleType = "car"; // Fixed to car only
   const [selectedBrand, setSelectedBrand] = useState<string>("");
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [selectedGeneration, setSelectedGeneration] = useState<string>("");
@@ -26,37 +25,36 @@ export default function PowerChecker() {
   const { trackClick } = useAnalytics();
   const { t } = useLanguage();
 
-  // Fetch brands based on vehicle type
+  // Fetch brands (always cars)
   const { data: brands = [] } = useQuery({
-    queryKey: [`/api/vehicles/brands/${vehicleType}`],
-    enabled: !!vehicleType,
+    queryKey: [`/api/vehicles/brands/car`],
   });
 
-  // Fetch models based on brand and vehicle type
+  // Fetch models based on brand
   const { data: models = [] } = useQuery({
-    queryKey: [`/api/vehicles/models/${vehicleType}/${selectedBrand}`],
-    enabled: !!selectedBrand && !!vehicleType,
+    queryKey: [`/api/vehicles/models/car/${selectedBrand}`],
+    enabled: !!selectedBrand,
   });
 
-  // Fetch generations based on model, brand and vehicle type
+  // Fetch generations based on model and brand
   const { data: generations = [] } = useQuery({
-    queryKey: [`/api/vehicles/generations/${vehicleType}/${selectedBrand}/${selectedModel}`],
-    enabled: !!selectedModel && !!selectedBrand && !!vehicleType,
+    queryKey: [`/api/vehicles/generations/car/${selectedBrand}/${selectedModel}`],
+    enabled: !!selectedModel && !!selectedBrand,
   });
 
   const { data: enginesData = [], isLoading: enginesLoading } = useQuery<string[]>({
-    queryKey: [`/api/vehicles/engines/${vehicleType}/${selectedBrand}/${selectedModel}/${selectedGeneration}`],
-    enabled: !!selectedGeneration && !!selectedModel && !!selectedBrand && !!vehicleType,
+    queryKey: [`/api/vehicles/engines/car/${selectedBrand}/${selectedModel}/${selectedGeneration}`],
+    enabled: !!selectedGeneration && !!selectedModel && !!selectedBrand,
   });
 
   // Ensure engines is always an array
   const engines = Array.isArray(enginesData) ? enginesData : [];
   
   const handleCheckPower = async () => {
-    if (!selectedEngine || !selectedGeneration || !selectedModel || !selectedBrand || !vehicleType) return;
+    if (!selectedEngine || !selectedGeneration || !selectedModel || !selectedBrand) return;
 
     try {
-      const response = await fetch(`/api/vehicles/power/${vehicleType}/${selectedBrand}/${selectedModel}/${selectedGeneration}/${selectedEngine}`);
+      const response = await fetch(`/api/vehicles/power/car/${selectedBrand}/${selectedModel}/${selectedGeneration}/${selectedEngine}`);
       if (response.ok) {
         const data = await response.json();
         setPowerData(data);
@@ -65,16 +63,6 @@ export default function PowerChecker() {
     } catch (error) {
       console.error('Error fetching power data:', error);
     }
-  };
-
-  // Reset dependent selections when parent selections change
-  const handleVehicleTypeChange = (value: string) => {
-    setVehicleType(value);
-    setSelectedBrand("");
-    setSelectedModel("");
-    setSelectedGeneration("");
-    setSelectedEngine("");
-    setPowerData(null);
   };
 
   const handleBrandChange = (value: string) => {
@@ -98,11 +86,7 @@ export default function PowerChecker() {
     setPowerData(null);
   };
 
-  const vehicleTypeOptions = [
-    { value: 'car', label: 'Car', icon: Car },
-    { value: 'truck', label: 'Truck', icon: Truck },
-    { value: 'tractor', label: 'Tractor', icon: Tractor },
-  ];
+
 
   return (
     <section id="power-check" className="py-20 bg-gray-800/50">
@@ -126,50 +110,24 @@ export default function PowerChecker() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Vehicle Type */}
+              {/* Brand Selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Vehicle Type
+                  {t.powerChecker.selectBrand}
                 </label>
-                <div className="grid grid-cols-3 gap-3">
-                  {vehicleTypeOptions.map(({ value, label, icon: Icon }) => (
-                    <Button
-                      key={value}
-                      variant={vehicleType === value ? "default" : "outline"}
-                      className={`h-16 flex flex-col items-center justify-center ${
-                        vehicleType === value 
-                          ? "bg-accent-500 text-white" 
-                          : "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600"
-                      }`}
-                      onClick={() => handleVehicleTypeChange(value)}
-                    >
-                      <Icon className="w-5 h-5 mb-1" />
-                      <span className="text-xs">{label}</span>
-                    </Button>
-                  ))}
-                </div>
+                <Select value={selectedBrand} onValueChange={handleBrandChange}>
+                  <SelectTrigger className="bg-gray-700 border-gray-600 text-gray-100">
+                    <SelectValue placeholder={t.powerChecker.selectBrand} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-700 border-gray-600">
+                    {(brands as string[]).map((brand: string) => (
+                      <SelectItem key={brand} value={brand} className="text-gray-100 hover:bg-gray-600">
+                        {brand}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-
-              {/* Brand Selection */}
-              {vehicleType && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    {t.powerChecker.selectBrand}
-                  </label>
-                  <Select value={selectedBrand} onValueChange={handleBrandChange}>
-                    <SelectTrigger className="bg-gray-700 border-gray-600 text-gray-100">
-                      <SelectValue placeholder={t.powerChecker.selectBrand} />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-700 border-gray-600">
-                      {(brands as string[]).map((brand: string) => (
-                        <SelectItem key={brand} value={brand} className="text-gray-100 hover:bg-gray-600">
-                          {brand}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
 
               {/* Model Selection */}
               {selectedBrand && (
