@@ -37,6 +37,8 @@ import {
   type InsertZboxContent,
   type WhyChooseUsContent,
   type InsertWhyChooseUsContent,
+  type ContactContent,
+  type InsertContactContent,
   vehicles,
   contactRequests,
   adminUsers,
@@ -55,7 +57,8 @@ import {
   vehicleSelections,
   geoLocations,
   zboxContent,
-  whyChooseUsContent
+  whyChooseUsContent,
+  contactContent
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql } from "drizzle-orm";
@@ -159,6 +162,10 @@ export interface IStorage {
   // Contact page content operations
   getContactPageContent(): Promise<ContactPageContent | undefined>;
   upsertContactPageContent(content: Partial<InsertContactPageContent>): Promise<ContactPageContent>;
+  
+  // Contact content operations (multilingual)
+  getContactContent(): Promise<ContactContent | undefined>;
+  upsertContactContent(content: Partial<InsertContactContent>): Promise<ContactContent>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -870,6 +877,54 @@ export class DatabaseStorage implements IStorage {
       
       const [created] = await db
         .insert(contactPageContent)
+        .values(defaultContent)
+        .returning();
+      return created;
+    }
+  }
+
+  // Contact content operations (multilingual)
+  async getContactContent(): Promise<ContactContent | undefined> {
+    const [content] = await db.select().from(contactContent).limit(1);
+    return content;
+  }
+
+  async upsertContactContent(contentData: Partial<InsertContactContent>): Promise<ContactContent> {
+    const existing = await this.getContactContent();
+    
+    if (existing) {
+      const [updated] = await db
+        .update(contactContent)
+        .set({
+          ...contentData,
+          updatedAt: new Date()
+        })
+        .where(eq(contactContent.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const defaultContent = {
+        phone: "+371 20123456",
+        email: "info@chiptuningpro.lv",
+        location: "Riga, Latvia",
+        quotesEmail: "quotes@chiptuningpro.lv",
+        heroTitleLv: "Saņemiet Bezmaksas Piedāvājumu",
+        heroTitleRu: "Получите Бесплатное Предложение",
+        heroTitleEn: "Get Your Free Quote",
+        heroDescriptionLv: "Sazinieties ar mums profesionālu ECU čipošanas pakalpojumu saņemšanai",
+        heroDescriptionRu: "Свяжитесь с нами для получения профессиональных услуг по чип-тюнингу ECU",
+        heroDescriptionEn: "Contact us for professional ECU tuning services",
+        formTitleLv: "Pieprasiet Savu Piedāvājumu",
+        formTitleRu: "Запросите Ваше Предложение",
+        formTitleEn: "Request Your Quote",
+        formDescriptionLv: "Aizpildiet formu zemāk un mēs ar jums sazināsimies 24 stundu laikā ar personalizētu piedāvājumu.",
+        formDescriptionRu: "Заполните форму ниже, и мы свяжемся с вами в течение 24 часов с персонализированным предложением.",
+        formDescriptionEn: "Fill out the form below and we will get back to you within 24 hours with a personalized quote.",
+        ...contentData
+      };
+      
+      const [created] = await db
+        .insert(contactContent)
         .values(defaultContent)
         .returning();
       return created;
