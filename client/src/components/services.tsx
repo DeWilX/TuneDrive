@@ -101,14 +101,19 @@ export default function Services() {
 
   // Transform admin data to match expected structure, fallback to default
   const services = (servicesData as any[]).length > 0 
-    ? (servicesData as any[]).map((service: any) => ({
-        title: service.title,
-        icon: service.icon || 'fa-cog',
-        image: service.image || 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3',
-        description: service.description,
-        features: service.features ? service.features.split('\n').filter(Boolean) : [],
-        price: service.price || 'Contact for price'
-      }))
+    ? (servicesData as any[])
+        .filter((service: any) => service.isActive !== false) // Only show active services
+        .sort((a: any, b: any) => (a.order || 0) - (b.order || 0)) // Sort by order
+        .map((service: any) => ({
+          title: service.title,
+          icon: service.icon || 'fa-cog',
+          image: service.image || 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3',
+          description: service.description,
+          features: Array.isArray(service.features) 
+            ? service.features.filter(Boolean) 
+            : (service.features ? service.features.split('\n').filter(Boolean) : []),
+          price: service.price || 'Contact for price'
+        }))
     : defaultServices;
 
   // Get services section content
