@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Save } from "lucide-react";
+import { Plus, Trash2, Save, Upload, Link } from "lucide-react";
 
 interface ZboxFormData {
   title: string;
@@ -41,6 +41,7 @@ const languages = [
 export default function ZboxManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [imageMode, setImageMode] = useState<'upload' | 'url'>('url');
 
   const [formData, setFormData] = useState<ZboxFormData>({
     title: "",
@@ -55,6 +56,15 @@ export default function ZboxManagement() {
   // Fetch current ZBOX content
   const { data: zboxData, isLoading } = useQuery<any>({
     queryKey: ['/api/admin/zbox'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/zbox', {
+        headers: {
+          'Authorization': `Bearer ${(window as any).authToken || ''}`
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch ZBOX content');
+      return response.json();
+    }
   });
 
   useEffect(() => {
@@ -90,10 +100,20 @@ export default function ZboxManagement() {
 
   const updateZboxMutation = useMutation({
     mutationFn: async (data: ZboxFormData) => {
-      return apiRequest('/api/admin/zbox', {
+      const response = await fetch('/api/admin/zbox', {
         method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(window as any).authToken || ''}`
+        },
         body: JSON.stringify(data),
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -337,6 +357,66 @@ export default function ZboxManagement() {
                   placeholder="Learn More About ZBOX"
                   className="bg-gray-700 border-gray-600 text-white"
                 />
+              </div>
+              <div>
+                <Label className="text-gray-300">Image</Label>
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant={imageMode === 'url' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setImageMode('url')}
+                    >
+                      <Link className="h-4 w-4 mr-2" />
+                      URL
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={imageMode === 'upload' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setImageMode('upload')}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload
+                    </Button>
+                  </div>
+                  
+                  {imageMode === 'url' ? (
+                    <Input
+                      value={formData.image || ""}
+                      onChange={(e) => handleInputChange('image', e.target.value)}
+                      placeholder="Enter image URL (e.g., https://example.com/zbox-image.jpg)"
+                      className="bg-gray-700 border-gray-600 text-white"
+                    />
+                  ) : (
+                    <div className="border-2 border-dashed border-gray-600 rounded-lg p-4 text-center">
+                      <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                      <p className="text-gray-400 text-sm">Upload functionality will be available soon</p>
+                      <p className="text-gray-500 text-xs">For now, please use the URL option</p>
+                    </div>
+                  )}
+                  
+                  {formData.image && (
+                    <div className="mt-3">
+                      <Label className="text-gray-300 text-sm">Preview:</Label>
+                      <div className="mt-2 border border-gray-600 rounded-lg overflow-hidden">
+                        <img 
+                          src={formData.image} 
+                          alt="ZBOX preview" 
+                          className="w-full h-32 object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                            const errorDiv = document.createElement('div');
+                            errorDiv.className = 'w-full h-32 bg-gray-700 flex items-center justify-center text-gray-400 text-sm';
+                            errorDiv.textContent = 'Invalid image URL';
+                            (e.target as HTMLImageElement).parentNode?.appendChild(errorDiv);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>

@@ -104,9 +104,13 @@ export default function ZBox() {
           
           <div className="relative">
             <img 
-              src="https://pixabay.com/get/gef47e70d2325ba5852f361aac8b997f684bfe06892d136d5fda0eb30606cdee09118bc1bd44183147c08af49373554f97344181f9885cebf3b1181e4290ad95f_1280.jpg" 
+              src={content.image || "https://pixabay.com/get/gef47e70d2325ba5852f361aac8b997f684bfe06892d136d5fda0eb30606cdee09118bc1bd44183147c08af49373554f97344181f9885cebf3b1181e4290ad95f_1280.jpg"} 
               alt="ZBOX Chiptuning device installation" 
-              className="w-full rounded-xl shadow-2xl" 
+              className="w-full rounded-xl shadow-2xl"
+              onError={(e) => {
+                // Fallback to default image if custom image fails
+                (e.target as HTMLImageElement).src = "https://pixabay.com/get/gef47e70d2325ba5852f361aac8b997f684bfe06892d136d5fda0eb30606cdee09118bc1bd44183147c08af49373554f97344181f9885cebf3b1181e4290ad95f_1280.jpg";
+              }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-gray-900/20 to-transparent rounded-xl"></div>
           </div>
