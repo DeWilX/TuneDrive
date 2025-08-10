@@ -3,16 +3,16 @@ import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/hooks/useLanguage";
 
 export default function ZBox() {
-  const { t } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
   
   // Fetch ZBox content from admin panel
-  const { data: pageContent = [] } = useQuery<any[]>({
-    queryKey: ['/api/page-content'],
+  const { data: zboxContent = null } = useQuery<any>({
+    queryKey: ['/api/zbox'],
   });
 
-  const zboxContent = pageContent.find((content: any) => content.section === 'zbox') || {
+  const defaultContent = {
     title: 'Introducing <span class="text-accent-500">ZBOX</span> Chiptuning Device',
-    content: 'Revolutionary plug-and-play chiptuning solution with smartphone app control. Easy installation, multiple power maps, and real-time adjustment capabilities.',
+    description: 'Revolutionary plug-and-play chiptuning solution with smartphone app control. Easy installation, multiple power maps, and real-time adjustment capabilities.',
     features: [
       "Plug-and-play installation in 5 minutes",
       "Multiple power maps via smartphone app", 
@@ -20,8 +20,35 @@ export default function ZBox() {
       "Reversible - no permanent changes"
     ],
     price: 'From €599',
-    priceNote: 'Including installation'
+    priceNote: 'Including installation',
+    buttonText: 'Learn More About ZBOX'
   };
+  
+  // Get translated content based on current language
+  const getTranslatedContent = () => {
+    if (!zboxContent || typeof zboxContent !== 'object') {
+      return defaultContent;
+    }
+
+    const translation = zboxContent.translations?.[currentLanguage];
+    if (!translation) {
+      return zboxContent; // Use default/original content
+    }
+
+    // Merge translation with default content, prioritizing translation fields
+    return {
+      title: translation.title || zboxContent.title,
+      description: translation.description || zboxContent.description,
+      features: (Array.isArray(translation.features) && translation.features.length > 0) 
+        ? translation.features.filter(f => f && f.trim()) 
+        : zboxContent.features,
+      price: translation.price || zboxContent.price,
+      priceNote: translation.priceNote || zboxContent.priceNote,
+      buttonText: translation.buttonText || zboxContent.buttonText
+    };
+  };
+
+  const content = getTranslatedContent();
   
   const scrollToContact = () => {
     const element = document.getElementById('contact');
@@ -37,15 +64,15 @@ export default function ZBox() {
           <div>
             <h2 
               className="text-3xl md:text-4xl font-bold text-gray-100 mb-6"
-              dangerouslySetInnerHTML={{ __html: zboxContent.title }}
+              dangerouslySetInnerHTML={{ __html: content.title }}
             />
             <div 
               className="text-xl text-gray-400 mb-8"
-              dangerouslySetInnerHTML={{ __html: zboxContent.content }}
+              dangerouslySetInnerHTML={{ __html: content.description }}
             />
             
             <div className="space-y-4 mb-8">
-              {(Array.isArray(zboxContent.features) ? zboxContent.features : [
+              {(Array.isArray(content.features) ? content.features : [
                 "Plug-and-play installation in 5 minutes",
                 "Multiple power maps via smartphone app",
                 "Real-time performance monitoring",
@@ -66,11 +93,11 @@ export default function ZBox() {
                 className="bg-accent-500 hover:bg-accent-600 text-white px-8 py-4 text-lg h-auto"
               >
                 <i className="fas fa-info-circle mr-2"></i>
-                Learn More About ZBOX
+                {content.buttonText || 'Learn More About ZBOX'}
               </Button>
               <div className="text-center sm:text-left">
-                <div className="text-2xl font-bold text-accent-500">{zboxContent.price}</div>
-                <div className="text-sm text-gray-400">{zboxContent.priceNote}</div>
+                <div className="text-2xl font-bold text-accent-500">{content.price}</div>
+                {content.priceNote && <div className="text-sm text-gray-400">{content.priceNote}</div>}
               </div>
             </div>
           </div>

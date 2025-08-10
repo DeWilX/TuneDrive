@@ -101,6 +101,20 @@ export const powerCalculatorData = pgTable("power_calculator_data", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const zboxContent = pgTable("zbox_content", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  translations: jsonb("translations"), // Object with language codes as keys for title/description/features/price/button
+  features: jsonb("features").notNull(), // array of feature strings
+  price: text("price").notNull(),
+  priceNote: text("price_note"),
+  buttonText: text("button_text").notNull().default("Learn More About ZBOX"),
+  image: text("image"),
+  isActive: boolean("is_active").default(true),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const insertVehicleSchema = createInsertSchema(vehicles).omit({
   id: true,
 });
@@ -136,6 +150,11 @@ export const insertContactInfoSchema = createInsertSchema(contactInfo).omit({
 });
 
 export const insertPowerCalculatorDataSchema = createInsertSchema(powerCalculatorData).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export const insertZboxContentSchema = createInsertSchema(zboxContent).omit({
   id: true,
   updatedAt: true,
 });
@@ -182,6 +201,8 @@ export type InsertServiceItem = z.infer<typeof insertServiceItemSchema>;
 export type ServiceItem = typeof serviceItems.$inferSelect;
 export type InsertContactInfo = z.infer<typeof insertContactInfoSchema>;
 export type ContactInfo = typeof contactInfo.$inferSelect;
+export type InsertZboxContent = z.infer<typeof insertZboxContentSchema>;
+export type ZboxContent = typeof zboxContent.$inferSelect;
 
 // Translations table for multilingual support
 export const translations = pgTable("translations", {
