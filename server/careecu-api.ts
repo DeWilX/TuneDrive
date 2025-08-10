@@ -211,7 +211,7 @@ export async function getModels(brandName: string): Promise<string[]> {
     console.log(
       `Successfully fetched models for ${brandName} from CareEcu API: ${validModels.length}`,
     );
-    return validModels.map((model) => model.name || model.var_title).filter(Boolean).sort();
+    return validModels.map((model) => model.name || model.var_title).filter((name): name is string => Boolean(name)).sort();
   } catch (error) {
     console.error(`Failed to fetch models for brand ${brandName}:`, error);
     throw error instanceof CareEcuApiError
@@ -269,7 +269,7 @@ export async function getYears(
     );
     return validYears
       .map((year) => year.year || year.var_title)
-      .filter(Boolean)
+      .filter((year): year is string => Boolean(year))
       .sort()
       .reverse();
   } catch (error) {
