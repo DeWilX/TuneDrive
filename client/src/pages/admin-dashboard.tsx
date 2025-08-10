@@ -377,10 +377,6 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="services" className="space-y-6">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-white mb-2">Manage Your Services</h2>
-              <p className="text-gray-400">Add, edit, or remove the tuning services you offer. These appear on your website's services section with prices and descriptions.</p>
-            </div>
             <ServicesManagement />
           </TabsContent>
 
