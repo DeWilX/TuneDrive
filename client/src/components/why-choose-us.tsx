@@ -74,9 +74,9 @@ export default function WhyChooseUs() {
     return {
       title: (translation.title && translation.title.trim()) || whyChooseUsContent.title,
       description: (translation.description && translation.description.trim()) || whyChooseUsContent.description,
-      features: (Array.isArray(translation.features) && translation.features.length > 0) 
-        ? translation.features 
-        : (Array.isArray(whyChooseUsContent.features) ? whyChooseUsContent.features : defaultFeatures),
+      features: Array.isArray(whyChooseUsContent.features) && whyChooseUsContent.features.length > 0 
+        ? whyChooseUsContent.features
+        : defaultFeatures,
       workshopTitle: (translation.workshopTitle && translation.workshopTitle.trim()) || whyChooseUsContent.workshopTitle,
       workshopDescription: (translation.workshopDescription && translation.workshopDescription.trim()) || whyChooseUsContent.workshopDescription,
       workshopFeatures: (Array.isArray(translation.workshopFeatures) && translation.workshopFeatures.length > 0) 
