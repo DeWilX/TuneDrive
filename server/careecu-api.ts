@@ -14,6 +14,7 @@ interface CareEcuBrand {
   logo?: string;
   image?: string;
   var_logo?: string;
+  var_logo_big?: string;
 }
 
 interface CareEcuModel {
@@ -578,7 +579,12 @@ export async function getTuningData(
       const brand = brands.find(
         (b) => (b.name || b.var_title).toLowerCase() === brandName.toLowerCase()
       );
-      brandLogo = brand?.var_logo || brand?.logo || brand?.image;
+      // Use var_logo_big with proper URL construction
+      if (brand?.var_logo_big) {
+        brandLogo = `https://api.carecusoft.com/userfiles/${brand.var_logo_big}`;
+      } else {
+        brandLogo = brand?.var_logo || brand?.logo || brand?.image;
+      }
     } catch (error) {
       console.log("Could not fetch brand logo:", error);
     }
