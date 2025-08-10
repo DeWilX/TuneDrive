@@ -225,50 +225,64 @@ export default function PowerChecker() {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {/* Original Power */}
-                  <div className="bg-gray-700/50 rounded-lg p-4">
-                    <h4 className="font-semibold text-gray-100 mb-2">{t.powerChecker.originalPower}</h4>
-                    <div className="flex justify-between">
-                      <span className="text-gray-300">{powerData.originalPower} HP</span>
-                      <span className="text-gray-300">{powerData.originalTorque} Nm</span>
+                  {/* Vehicle Info Header */}
+                  <div className="flex items-center justify-center mb-4">
+                    <div className="bg-white rounded-full p-3 mr-4">
+                      <i className="fas fa-car text-gray-700 text-xl"></i>
+                    </div>
+                    <div className="text-center">
+                      <h3 className="text-lg font-bold text-white">{selectedBrand} {selectedModel}</h3>
+                      <p className="text-gray-400 text-sm">{selectedGeneration} • {selectedEngine}</p>
                     </div>
                   </div>
 
-                  {/* Stage 1 */}
-                  <div className="bg-accent-500/10 rounded-lg p-4 border border-accent-500/20">
-                    <h4 className="font-semibold text-accent-400 mb-2">{t.powerChecker.stage1Power}</h4>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-gray-300">{powerData.stage1Power} HP</span>
-                      <span className="text-gray-300">{powerData.stage1Torque} Nm</span>
+                  {/* Professional Power Results Cards - Horizontal Layout */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {/* Standard/Original Power Card */}
+                    <div className="bg-white rounded-xl p-6 text-center shadow-lg">
+                      <div className="flex items-center justify-center mb-3">
+                        <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wider">STANDARD</h3>
+                      </div>
+                      <div className="text-3xl font-bold text-gray-800 mb-1">{powerData.originalPower}<span className="text-lg font-normal text-gray-600">HP</span></div>
+                      <div className="text-2xl font-semibold text-gray-600">{powerData.originalTorque}<span className="text-lg font-normal text-gray-500">NM</span></div>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-accent-400">
-                        +{powerData.stage1Power - powerData.originalPower} HP ({powerData.stage1PowerGain}%)
-                      </span>
-                      <span className="text-accent-400">
-                        +{powerData.stage1Torque - powerData.originalTorque} Nm ({powerData.stage1TorqueGain}%)
-                      </span>
-                    </div>
-                  </div>
 
-                  {/* Stage 2 */}
-                  {powerData.stage2Power && (
-                    <div className="bg-green-500/10 rounded-lg p-4 border border-green-500/20">
-                      <h4 className="font-semibold text-green-400 mb-2">{t.powerChecker.stage2Power}</h4>
-                      <div className="flex justify-between mb-2">
-                        <span className="text-gray-300">{powerData.stage2Power} HP</span>
-                        <span className="text-gray-300">{powerData.stage2Torque} Nm</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-green-400">
-                          +{powerData.stage2Power - powerData.originalPower} HP ({powerData.stage2PowerGain}%)
+                    {/* Stage 1 Card */}
+                    <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-6 text-center shadow-lg border border-gray-700">
+                      <div className="flex items-center justify-center mb-3 space-x-2">
+                        <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                          +{powerData.stage1PowerGain}% FUEL
                         </span>
-                        <span className="text-green-400">
-                          +{powerData.stage2Torque - powerData.originalTorque} Nm ({powerData.stage2TorqueGain}%)
-                        </span>
+                        <h3 className="font-bold text-white text-sm uppercase tracking-wider">STAGE 1</h3>
                       </div>
+                      <div className="text-3xl font-bold text-white mb-1">{powerData.stage1Power}<span className="text-lg font-normal text-gray-300">HP</span></div>
+                      <div className="text-2xl font-semibold text-gray-300 mb-3">{powerData.stage1Torque}<span className="text-lg font-normal text-gray-400">NM</span></div>
+                      <div className="flex justify-center space-x-6 text-sm mb-3">
+                        <span className="text-red-400 font-bold">+{powerData.stage1Power - powerData.originalPower} HP</span>
+                        <span className="text-red-400 font-bold">+{powerData.stage1Torque - powerData.originalTorque} NM</span>
+                      </div>
+                      <div className="text-right text-sm text-gray-400 font-semibold">€300</div>
                     </div>
-                  )}
+
+                    {/* Stage 2 Card */}
+                    {powerData.stage2Power && (
+                      <div className="bg-gradient-to-br from-gray-900 to-black rounded-xl p-6 text-center shadow-lg border border-gray-600">
+                        <div className="flex items-center justify-center mb-3 space-x-2">
+                          <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                            +{powerData.stage2PowerGain}% FUEL
+                          </span>
+                          <h3 className="font-bold text-white text-sm uppercase tracking-wider">STAGE 2</h3>
+                        </div>
+                        <div className="text-3xl font-bold text-white mb-1">{powerData.stage2Power}<span className="text-lg font-normal text-gray-300">HP</span></div>
+                        <div className="text-2xl font-semibold text-gray-300 mb-3">{powerData.stage2Torque}<span className="text-lg font-normal text-gray-400">NM</span></div>
+                        <div className="flex justify-center space-x-6 text-sm mb-3">
+                          <span className="text-red-400 font-bold">+{powerData.stage2Power - powerData.originalPower} HP</span>
+                          <span className="text-red-400 font-bold">+{powerData.stage2Torque - powerData.originalTorque} NM</span>
+                        </div>
+                        <div className="text-right text-sm text-gray-400 font-semibold">€400</div>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Get Quote Button */}
                   <Button
