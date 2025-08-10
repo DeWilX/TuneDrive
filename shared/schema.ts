@@ -55,6 +55,8 @@ export const navigationItems = pgTable("navigation_items", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   label: text("label").notNull(),
   href: text("href").notNull(),
+  translations: jsonb("translations"), // Object with language codes as keys
+  icon: text("icon"),
   order: integer("order").notNull(),
   isActive: boolean("is_active").default(true),
   updatedAt: timestamp("updated_at").defaultNow(),

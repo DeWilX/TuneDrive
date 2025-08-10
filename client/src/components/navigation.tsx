@@ -11,6 +11,7 @@ interface NavigationItem {
   order: number;
   isActive: boolean;
   icon?: string;
+  translations?: { [key: string]: string };
 }
 
 interface SiteIdentity {
@@ -22,7 +23,7 @@ interface SiteIdentity {
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { t } = useLanguage();
+  const { t, currentLanguage } = useLanguage();
 
   // Fetch navigation items from database
   const { data: navigationItems = [] } = useQuery({
@@ -84,7 +85,7 @@ export default function Navigation() {
                     className="text-gray-300 hover:text-accent-500 px-3 py-2 text-sm font-medium transition-colors flex items-center gap-2"
                   >
                     {item.icon && <i className={`${item.icon} text-sm`}></i>}
-                    {item.label}
+                    {item.translations?.[currentLanguage] || item.label}
                   </button>
                 ))}
               
@@ -130,7 +131,7 @@ export default function Navigation() {
                     className="w-full text-left text-gray-300 hover:text-accent-500 px-3 py-2 text-sm font-medium transition-colors flex items-center gap-2"
                   >
                     {item.icon && <i className={`${item.icon} text-sm`}></i>}
-                    {item.label}
+                    {item.translations?.[currentLanguage] || item.label}
                   </button>
                 ))}
               
