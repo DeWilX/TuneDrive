@@ -37,7 +37,8 @@ export default function WhyChooseUs() {
   // Fetch why choose us content from admin panel with auto-refresh
   const { data: whyChooseUsContent = null } = useQuery<any>({
     queryKey: ['/api/why-choose-us'],
-    refetchInterval: 1000, // Refresh every second to show admin changes
+    refetchInterval: 500, // Refresh every 500ms to show admin changes immediately
+    staleTime: 0, // Always fetch fresh data
   });
 
   // Get translated content based on current language

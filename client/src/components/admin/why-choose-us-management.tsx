@@ -192,23 +192,35 @@ export default function WhyChooseUsManagement() {
     }));
   };
 
-  // Helper functions for direct editing
+  // Helper functions for direct editing with auto-save
   const updateFeature = (index: number, field: 'icon' | 'title' | 'description', value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      features: prev.features.map((feature, i) => 
+    const newFormData = {
+      ...formData,
+      features: formData.features.map((feature, i) => 
         i === index ? { ...feature, [field]: value } : feature
       )
-    }));
+    };
+    setFormData(newFormData);
+    
+    // Auto-save after a short delay
+    setTimeout(() => {
+      saveMutation.mutate(newFormData);
+    }, 500);
   };
 
   const updateWorkshopFeature = (index: number, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      workshopFeatures: prev.workshopFeatures.map((feature, i) => 
+    const newFormData = {
+      ...formData,
+      workshopFeatures: formData.workshopFeatures.map((feature, i) => 
         i === index ? value : feature
       )
-    }));
+    };
+    setFormData(newFormData);
+    
+    // Auto-save after a short delay
+    setTimeout(() => {
+      saveMutation.mutate(newFormData);
+    }, 500);
   };
 
   // Get current translation data
@@ -261,22 +273,11 @@ export default function WhyChooseUsManagement() {
       </div>
 
       <Tabs defaultValue="content" className="space-y-6">
-        <div className="flex items-center justify-between mb-4">
-          <TabsList className="grid w-full max-w-md grid-cols-3">
-            <TabsTrigger value="content">Main Content</TabsTrigger>
-            <TabsTrigger value="features">Features</TabsTrigger>
-            <TabsTrigger value="translations">Translations</TabsTrigger>
-          </TabsList>
-          <Button 
-            onClick={handleSave} 
-            disabled={saveMutation.isPending}
-            variant="default"
-            className="bg-accent-600 hover:bg-accent-700 text-white"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            {saveMutation.isPending ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </div>
+        <TabsList className="grid w-full max-w-md grid-cols-3 mb-6">
+          <TabsTrigger value="content">Main Content</TabsTrigger>
+          <TabsTrigger value="features">Features</TabsTrigger>
+          <TabsTrigger value="translations">Translations</TabsTrigger>
+        </TabsList>
 
         {/* Main Content Tab */}
         <TabsContent value="content" className="space-y-6">
@@ -354,11 +355,11 @@ export default function WhyChooseUsManagement() {
                 <Label>Workshop Features</Label>
                 <div className="space-y-2 mt-2">
                   {formData.workshopFeatures.map((feature, index) => (
-                    <div key={index} className="flex items-center gap-2 p-2 border rounded-lg bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600">
+                    <div key={index} className="flex items-center gap-2 p-3 border-2 rounded-lg bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600">
                       <Input
                         value={feature}
                         onChange={(e) => updateWorkshopFeature(index, e.target.value)}
-                        className="flex-1"
+                        className="flex-1 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                         placeholder="Workshop feature"
                       />
                       <Button
@@ -391,7 +392,7 @@ export default function WhyChooseUsManagement() {
             </CardHeader>
             <CardContent className="space-y-4">
               {formData.features.map((feature, index) => (
-                <div key={index} className="p-4 border rounded-lg space-y-3 bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600">
+                <div key={index} className="p-4 border-2 rounded-lg space-y-3 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 space-y-3">
                       <div className="flex items-center gap-3">
@@ -427,7 +428,7 @@ export default function WhyChooseUsManagement() {
                         <Input
                           value={feature.title}
                           onChange={(e) => updateFeature(index, 'title', e.target.value)}
-                          className="font-medium flex-1"
+                          className="font-medium flex-1 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                           placeholder="Feature title"
                         />
                       </div>
