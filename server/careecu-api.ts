@@ -1,6 +1,7 @@
 // CareEcuSoft API integration with caching
 const API_BASE_URL = "https://api.carecusoft.com";
 const API_KEY = "5c78cfd1ca4ff97888f564558177b3e7";
+const ENGINES_API_KEY = "AD5AS45D464DAS6D4SA65D46ASD4AS8F4AS6F4A68";
 const LANG = "lv";
 
 interface CareEcuBrand {
@@ -289,7 +290,7 @@ export async function getYears(
   }
 }
 
-// New function to get engine specifications from CareEcu year data
+// Get engines using the correct API endpoint
 export async function getEnginesFromYear(
   brandName: string,
   modelName: string,
@@ -348,34 +349,34 @@ export async function getEnginesFromYear(
 
     console.log(`[API DEBUG] Using year ID: ${yearObj.id} for year: ${year}`);
 
-    // Get all stages for this year to extract unique engine specifications
-    const stages = await cachedApiRequest<CareEcuStage[]>(
-      `${API_BASE_URL}/lv/v1/tuning/stages/${yearObj.id}?key=${API_KEY}`,
+    // Get engines using the correct API endpoint with different API key
+    const engines = await cachedApiRequest<CareEcuEngine[]>(
+      `${API_BASE_URL}/en/v1/tuning/engines/${yearObj.id}?key=${ENGINES_API_KEY}`,
       cacheKey,
     );
     
-    if (!stages || stages.length === 0) {
+    if (!engines || engines.length === 0) {
       throw new CareEcuApiError("No engine data available from CareEcu API");
     }
     
-    // Extract unique engine specifications from the parent data
-    const engineSpecs = new Set<string>();
-    stages.forEach(stage => {
-      if (stage.parent && stage.parent.var_title) {
-        engineSpecs.add(stage.parent.var_title);
-      }
-    });
+    // Extract engine names
+    const validEngines = engines.filter(
+      (engine) => engine && (engine.name || engine.var_title),
+    );
     
-    const engines = Array.from(engineSpecs).filter(engine => engine.length > 0);
-    
-    if (engines.length === 0) {
+    if (validEngines.length === 0) {
       throw new CareEcuApiError("No valid engine specifications found in CareEcu API data");
     }
     
+    const engineNames = validEngines
+      .map((engine) => engine.name || engine.var_title)
+      .filter((name): name is string => Boolean(name))
+      .sort();
+    
     console.log(
-      `Successfully fetched ${engines.length} engines for ${brandName} ${modelName} ${year} from CareEcu API`,
+      `Successfully fetched ${engineNames.length} engines for ${brandName} ${modelName} ${year} from CareEcu API`,
     );
-    return engines.sort();
+    return engineNames;
   } catch (error) {
     console.error(
       `Failed to fetch engines for ${brandName} ${modelName} ${year}:`,
@@ -457,9 +458,9 @@ export async function getTuningData(
     console.log(`[API DEBUG] getTuningData - Using year ID: ${yearObj.id} for year: ${year}`);
     console.log(`[API DEBUG] getTuningData - Looking for engine: ${engineName}`);
 
-    // Get stages (cached)
-    const stages = await cachedApiRequest<CareEcuStage[]>(
-      `${API_BASE_URL}/lv/v1/tuning/stages/${yearObj.id}?key=${API_KEY}`,
+    // Get engines using correct API
+    const engines = await cachedApiRequest<CareEcuEngine[]>(
+      `${API_BASE_URL}/en/v1/tuning/engines/${yearObj.id}?key=${ENGINES_API_KEY}`,
       getCacheKey("getEnginesFromYear", [
         brandName.toLowerCase(),
         modelName.toLowerCase(),
@@ -467,28 +468,40 @@ export async function getTuningData(
       ]),
     );
 
+    if (!engines || engines.length === 0) {
+      return null;
+    }
+
+    // Find the specific engine
+    const engine = engines.find(
+      (e) => (e.name || e.var_title) === engineName
+    );
+
+    if (!engine) {
+      console.log(`Engine ${engineName} not found`);
+      return null;
+    }
+
+    console.log(`[API DEBUG] getTuningData - Using engine ID: ${engine.id} for engine: ${engineName}`);
+
+    // Get tuning stages for this engine
+    const stages = await cachedApiRequest<CareEcuStage[]>(
+      `${API_BASE_URL}/lv/v1/tuning/stages/${engine.id}?key=${API_KEY}`,
+      cacheKey,
+    );
+
     if (!stages || stages.length === 0) {
       return null;
     }
 
-    // Find stages for the specific engine
-    const engineStages = stages.filter(
-      (s) => s.parent && s.parent.var_title === engineName
-    );
-
-    if (engineStages.length === 0) {
-      console.log(`No stages found for engine ${engineName}`);
-      return null;
-    }
-
-    // Find ECO and STAGE 1 data for this specific engine
-    const ecoStage = engineStages.find(
+    // Find ECO and STAGE 1 data for this engine
+    const ecoStage = stages.find(
       (s) => (s.var_title || "").toUpperCase().includes("ECO")
     );
-    const stage1 = engineStages.find(
+    const stage1 = stages.find(
       (s) => (s.var_title || "").toUpperCase().includes("STAGE 1")
     );
-    const stage2 = engineStages.find(
+    const stage2 = stages.find(
       (s) => (s.var_title || "").toUpperCase().includes("STAGE 2")
     );
 
