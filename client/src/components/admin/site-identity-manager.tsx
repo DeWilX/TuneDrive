@@ -46,6 +46,9 @@ export default function SiteIdentityManager({ token }: SiteIdentityManagerProps)
     accentColor: '#f59e0b',
     backgroundColor: '#000000',
     textColor: '#ffffff',
+    clientCount: 500,
+    projectCount: 1200,
+    experienceYears: 10,
   });
 
   // Update form data when site identity loads
@@ -64,13 +67,26 @@ export default function SiteIdentityManager({ token }: SiteIdentityManagerProps)
         accentColor: siteIdentity.accentColor || '#f59e0b',
         backgroundColor: siteIdentity.backgroundColor || '#000000',
         textColor: siteIdentity.textColor || '#ffffff',
+        clientCount: siteIdentity.clientCount || 500,
+        projectCount: siteIdentity.projectCount || 1200,
+        experienceYears: siteIdentity.experienceYears || 10,
       });
     }
   }, [siteIdentity]);
 
   const updateMutation = useMutation({
     mutationFn: async (data: Partial<SiteIdentity>) => {
-      const response = await apiRequest('POST', '/api/admin/site-identity', data);
+      const response = await fetch('/api/admin/site-identity', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update site identity');
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -426,6 +442,50 @@ export default function SiteIdentityManager({ token }: SiteIdentityManagerProps)
                   rows={3}
                   className="bg-gray-700 border-gray-600 text-white"
                 />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-800 border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-gray-100">Hero Statistics</CardTitle>
+              <p className="text-gray-400 text-sm">Numbers displayed in your hero section to show your business credibility</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="clientCount" className="text-gray-300">Happy Clients</Label>
+                  <Input
+                    id="clientCount"
+                    type="number"
+                    value={formData.clientCount || 500}
+                    onChange={(e) => setFormData(prev => ({ ...prev, clientCount: parseInt(e.target.value) || 500 }))}
+                    placeholder="500"
+                    className="bg-gray-700 border-gray-600 text-white"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="projectCount" className="text-gray-300">Completed Projects</Label>
+                  <Input
+                    id="projectCount"
+                    type="number"
+                    value={formData.projectCount || 1200}
+                    onChange={(e) => setFormData(prev => ({ ...prev, projectCount: parseInt(e.target.value) || 1200 }))}
+                    placeholder="1200"
+                    className="bg-gray-700 border-gray-600 text-white"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="experienceYears" className="text-gray-300">Years of Experience</Label>
+                  <Input
+                    id="experienceYears"
+                    type="number"
+                    value={formData.experienceYears || 10}
+                    onChange={(e) => setFormData(prev => ({ ...prev, experienceYears: parseInt(e.target.value) || 10 }))}
+                    placeholder="10"
+                    className="bg-gray-700 border-gray-600 text-white"
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>

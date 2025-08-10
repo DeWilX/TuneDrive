@@ -159,6 +159,9 @@ export const siteIdentity = pgTable("site_identity", {
   tagline: varchar("tagline"),
   heroTitle: varchar("hero_title"),
   heroSubtitle: varchar("hero_subtitle"),
+  clientCount: integer("client_count").default(500),
+  projectCount: integer("project_count").default(1200),
+  experienceYears: integer("experience_years").default(10),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
