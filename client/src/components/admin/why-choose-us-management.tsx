@@ -143,12 +143,15 @@ export default function WhyChooseUsManagement() {
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Why Choose Us content updated successfully!",
+        description: "Changes saved automatically!",
       });
-      // Force refresh both admin and public APIs
+      // Force immediate refresh of all related queries
       queryClient.invalidateQueries({ queryKey: ['/api/admin/why-choose-us'] });
       queryClient.invalidateQueries({ queryKey: ['/api/why-choose-us'] });
       queryClient.refetchQueries({ queryKey: ['/api/why-choose-us'] });
+      
+      // Also invalidate any cached data to force fresh fetch
+      queryClient.removeQueries({ queryKey: ['/api/why-choose-us'] });
     },
     onError: (error) => {
       toast({
@@ -355,11 +358,11 @@ export default function WhyChooseUsManagement() {
                 <Label>Workshop Features</Label>
                 <div className="space-y-2 mt-2">
                   {formData.workshopFeatures.map((feature, index) => (
-                    <div key={index} className="flex items-center gap-2 p-3 border-2 rounded-lg bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600">
+                    <div key={index} className="flex items-center gap-2 p-3 border-2 rounded-lg bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-600">
                       <Input
                         value={feature}
                         onChange={(e) => updateWorkshopFeature(index, e.target.value)}
-                        className="flex-1 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
+                        className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                         placeholder="Workshop feature"
                       />
                       <Button
@@ -372,7 +375,10 @@ export default function WhyChooseUsManagement() {
                     </div>
                   ))}
                 </div>
-                <Button onClick={addWorkshopFeature} className="w-full border-2 border-dashed border-muted-foreground/50 bg-transparent hover:bg-muted mt-3">
+                <Button 
+                  onClick={addWorkshopFeature} 
+                  className="w-full border-2 border-dashed border-accent-400 bg-accent-50 dark:bg-accent-900/20 hover:bg-accent-100 dark:hover:bg-accent-800/30 text-accent-700 dark:text-accent-300 font-medium py-3 mt-3"
+                >
                   <Plus className="w-4 h-4 mr-2" />
                   Add Workshop Feature
                 </Button>
@@ -392,7 +398,7 @@ export default function WhyChooseUsManagement() {
             </CardHeader>
             <CardContent className="space-y-4">
               {formData.features.map((feature, index) => (
-                <div key={index} className="p-4 border-2 rounded-lg space-y-3 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600">
+                <div key={index} className="p-4 border-2 rounded-lg space-y-3 bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-600">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 space-y-3">
                       <div className="flex items-center gap-3">
@@ -401,7 +407,7 @@ export default function WhyChooseUsManagement() {
                           <select
                             value={feature.icon}
                             onChange={(e) => updateFeature(index, 'icon', e.target.value)}
-                            className="p-2 border rounded text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
+                            className="p-2 border rounded text-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                           >
                             <option value="fa-award">🏆 Award</option>
                             <option value="fa-calendar-alt">📅 Calendar</option>
@@ -428,14 +434,14 @@ export default function WhyChooseUsManagement() {
                         <Input
                           value={feature.title}
                           onChange={(e) => updateFeature(index, 'title', e.target.value)}
-                          className="font-medium flex-1 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
+                          className="font-medium flex-1 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
                           placeholder="Feature title"
                         />
                       </div>
                       <textarea
                         value={feature.description}
                         onChange={(e) => updateFeature(index, 'description', e.target.value)}
-                        className="w-full p-3 border rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 resize-none"
+                        className="w-full p-3 border rounded-md bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 resize-none"
                         rows={2}
                         placeholder="Feature description"
                       />
@@ -451,7 +457,10 @@ export default function WhyChooseUsManagement() {
                 </div>
               ))}
               
-              <Button onClick={addFeature} className="w-full border-2 border-dashed border-muted-foreground/50 bg-transparent hover:bg-muted">
+              <Button 
+                onClick={addFeature} 
+                className="w-full border-2 border-dashed border-accent-400 bg-accent-50 dark:bg-accent-900/20 hover:bg-accent-100 dark:hover:bg-accent-800/30 text-accent-700 dark:text-accent-300 font-medium py-3"
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Add New Feature
               </Button>
