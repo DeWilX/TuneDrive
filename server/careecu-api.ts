@@ -201,6 +201,8 @@ export async function getModels(brandName: string): Promise<string[]> {
       throw new CareEcuApiError(`Brand "${brandName}" not found`);
     }
 
+    console.log(`[API DEBUG] Using brand ID: ${brand.id} for brand: ${brandName}`);
+    
     const models = await cachedApiRequest<CareEcuModel[]>(
       `${API_BASE_URL}/lv/v1/tuning/models/${brand.id}?key=${API_KEY}`,
       cacheKey,
@@ -242,6 +244,8 @@ export async function getYears(
       throw new CareEcuApiError(`Brand "${brandName}" not found`);
     }
 
+    console.log(`[API DEBUG] Using brand ID: ${brand.id} for brand: ${brandName}`);
+
     // Get models (cached)
     const models = await cachedApiRequest<CareEcuModel[]>(
       `${API_BASE_URL}/lv/v1/tuning/models/${brand.id}?key=${API_KEY}`,
@@ -256,6 +260,8 @@ export async function getYears(
         `Model "${modelName}" not found for brand "${brandName}"`,
       );
     }
+
+    console.log(`[API DEBUG] Using model ID: ${model.id} for model: ${modelName}`);
 
     const years = await cachedApiRequest<CareEcuYear[]>(
       `${API_BASE_URL}/lv/v1/tuning/years/${model.id}?key=${API_KEY}`,
@@ -308,6 +314,8 @@ export async function getEnginesFromYear(
       throw new CareEcuApiError(`Brand "${brandName}" not found`);
     }
 
+    console.log(`[API DEBUG] Using brand ID: ${brand.id} for brand: ${brandName}`);
+
     // Get models (cached)
     const models = await cachedApiRequest<CareEcuModel[]>(
       `${API_BASE_URL}/lv/v1/tuning/models/${brand.id}?key=${API_KEY}`,
@@ -323,6 +331,8 @@ export async function getEnginesFromYear(
       );
     }
 
+    console.log(`[API DEBUG] Using model ID: ${model.id} for model: ${modelName}`);
+
     // Get years (cached)
     const years = await cachedApiRequest<CareEcuYear[]>(
       `${API_BASE_URL}/lv/v1/tuning/years/${model.id}?key=${API_KEY}`,
@@ -335,6 +345,8 @@ export async function getEnginesFromYear(
         `Year "${year}" not found for ${brandName} ${modelName}`,
       );
     }
+
+    console.log(`[API DEBUG] Using year ID: ${yearObj.id} for year: ${year}`);
 
     // Get all stages for this year to extract unique engine specifications
     const stages = await cachedApiRequest<CareEcuStage[]>(
@@ -410,6 +422,8 @@ export async function getTuningData(
       throw new CareEcuApiError(`Brand "${brandName}" not found`);
     }
 
+    console.log(`[API DEBUG] getTuningData - Using brand ID: ${brand.id} for brand: ${brandName}`);
+
     // Get models (cached)
     const models = await cachedApiRequest<CareEcuModel[]>(
       `${API_BASE_URL}/lv/v1/tuning/models/${brand.id}?key=${API_KEY}`,
@@ -425,6 +439,8 @@ export async function getTuningData(
       );
     }
 
+    console.log(`[API DEBUG] getTuningData - Using model ID: ${model.id} for model: ${modelName}`);
+
     // Get years (cached)
     const years = await cachedApiRequest<CareEcuYear[]>(
       `${API_BASE_URL}/lv/v1/tuning/years/${model.id}?key=${API_KEY}`,
@@ -437,6 +453,9 @@ export async function getTuningData(
         `Year "${year}" not found for ${brandName} ${modelName}`,
       );
     }
+
+    console.log(`[API DEBUG] getTuningData - Using year ID: ${yearObj.id} for year: ${year}`);
+    console.log(`[API DEBUG] getTuningData - Looking for engine: ${engineName}`);
 
     // Get stages (cached)
     const stages = await cachedApiRequest<CareEcuStage[]>(
