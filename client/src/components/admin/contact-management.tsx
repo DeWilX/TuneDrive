@@ -1,68 +1,158 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { Save, RotateCcw } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import type { ContactContent, InsertContactContent } from "@shared/schema";
 
-// Language configuration
-const languages = [
-  { code: 'lv', name: 'Latvian', flag: '🇱🇻' },
-  { code: 'ru', name: 'Russian', flag: '🇷🇺' },
-  { code: 'en', name: 'English', flag: '🇺🇸' }
+interface ContactContent {
+  id: string;
+  title: string;
+  description: string;
+  formTitle: string;
+  formDescription: string;
+  translations: {
+    lv: {
+      title: string;
+      description: string;
+      formTitle: string;
+      formDescription: string;
+    };
+    ru: {
+      title: string;
+      description: string;
+      formTitle: string;
+      formDescription: string;
+    };
+    en: {
+      title: string;
+      description: string;
+      formTitle: string;
+      formDescription: string;
+    };
+  };
+  isActive: boolean;
+  updatedAt: string;
+}
+
+const LANGUAGES = [
+  { code: 'lv', name: 'Latviešu', flag: '🇱🇻' },
+  { code: 'ru', name: 'Русский', flag: '🇷🇺' },
+  { code: 'en', name: 'English', flag: '🇬🇧' }
 ];
 
-export function ContactManagement() {
+export default function ContactManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("content");
+  const [formData, setFormData] = useState<ContactContent | null>(null);
+  const [hasChanges, setHasChanges] = useState(false);
 
-  // Contact content query
-  const { data: contactContent, isLoading: isLoadingContent } = useQuery<ContactContent>({
-    queryKey: ["/api/admin/contact-content"],
+  const { data: contactContent, isLoading } = useQuery({
+    queryKey: ['/api/admin/contact-content'],
+    refetchOnWindowFocus: false,
   });
 
-  // Contact content mutation
-  const updateContactContentMutation = useMutation({
-    mutationFn: (data: Partial<InsertContactContent>) =>
-      apiRequest("/api/admin/contact-content", {
-        method: "PUT",
+  const updateMutation = useMutation({
+    mutationFn: (data: ContactContent) =>
+      apiRequest('/api/admin/contact-content', {
+        method: 'PUT',
         body: JSON.stringify(data),
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/contact-content"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/contact-content"] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/contact-content'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/contact-content'] });
+      setHasChanges(false);
       toast({
         title: "Success",
-        description: "Contact information updated successfully",
+        description: "Contact content updated successfully",
       });
     },
     onError: (error: any) => {
-      console.error("Update error:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to update contact information",
+        description: error.message || "Failed to update contact content",
         variant: "destructive",
       });
     },
   });
 
-  const handleContactInfoUpdate = (data: Partial<InsertContactContent>) => {
-    updateContactContentMutation.mutate(data);
+  useEffect(() => {
+    if (contactContent && !formData) {
+      setFormData({
+        ...contactContent,
+        translations: contactContent.translations || {
+          lv: { title: "", description: "", formTitle: "", formDescription: "" },
+          ru: { title: "", description: "", formTitle: "", formDescription: "" },
+          en: { title: "", description: "", formTitle: "", formDescription: "" }
+        }
+      });
+    }
+  }, [contactContent, formData]);
+
+  const handleFieldChange = (field: keyof ContactContent, value: any) => {
+    if (!formData) return;
+    
+    setFormData(prev => prev ? { ...prev, [field]: value } : null);
+    setHasChanges(true);
   };
 
-  if (isLoadingContent) {
+  const handleTranslationChange = (language: string, field: string, value: string) => {
+    if (!formData) return;
+    
+    setFormData(prev => prev ? {
+      ...prev,
+      translations: {
+        ...prev.translations,
+        [language]: {
+          ...prev.translations[language as keyof typeof prev.translations],
+          [field]: value
+        }
+      }
+    } : null);
+    setHasChanges(true);
+  };
+
+  const handleSave = () => {
+    if (!formData) return;
+    updateMutation.mutate(formData);
+  };
+
+  const handleReset = () => {
+    if (contactContent) {
+      setFormData({
+        ...contactContent,
+        translations: contactContent.translations || {
+          lv: { title: "", description: "", formTitle: "", formDescription: "" },
+          ru: { title: "", description: "", formTitle: "", formDescription: "" },
+          en: { title: "", description: "", formTitle: "", formDescription: "" }
+        }
+      });
+      setHasChanges(false);
+    }
+  };
+
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="h-8 bg-muted animate-pulse rounded" />
-        <div className="h-64 bg-muted animate-pulse rounded" />
+        <div className="h-96 bg-muted animate-pulse rounded" />
       </div>
+    );
+  }
+
+  if (!formData) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-muted-foreground">No contact content found.</p>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -70,323 +160,158 @@ export function ContactManagement() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Contact Management</h2>
+          <h2 className="text-2xl font-bold">Contact Section Management</h2>
           <p className="text-muted-foreground">
-            Manage all contact information, forms, and email settings from one central location
+            Manage contact section content with multilingual support
           </p>
         </div>
-        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
-          Centralized Contact System
-        </Badge>
+        <div className="flex items-center gap-2">
+          {hasChanges && (
+            <Badge variant="secondary" className="animate-pulse">
+              Unsaved changes
+            </Badge>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleReset}
+            disabled={!hasChanges || updateMutation.isPending}
+          >
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Reset
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={!hasChanges || updateMutation.isPending}
+            size="sm"
+          >
+            <Save className="h-4 w-4 mr-2" />
+            {updateMutation.isPending ? "Saving..." : "Save Changes"}
+          </Button>
+        </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="content">Contact Content</TabsTrigger>
-          <TabsTrigger value="details">Contact Details</TabsTrigger>
-          <TabsTrigger value="settings">Email Settings</TabsTrigger>
+      <Tabs defaultValue="content" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="content">Main Content</TabsTrigger>
+          <TabsTrigger value="translations">Translations</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="content" className="space-y-6">
-          <ContactContentForm
-            contactContent={contactContent}
-            onUpdate={handleContactInfoUpdate}
-            isUpdating={updateContactContentMutation.isPending}
-          />
+        <TabsContent value="content" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Default Content (Latvian)</CardTitle>
+              <CardDescription>
+                Main content fields that serve as fallback when translations are missing
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="title">Section Title</Label>
+                <Input
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => handleFieldChange('title', e.target.value)}
+                  placeholder="Contact section title"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="description">Section Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => handleFieldChange('description', e.target.value)}
+                  placeholder="Brief description of contact section"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="formTitle">Form Title</Label>
+                <Input
+                  id="formTitle"
+                  value={formData.formTitle}
+                  onChange={(e) => handleFieldChange('formTitle', e.target.value)}
+                  placeholder="Contact form title"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="formDescription">Form Description</Label>
+                <Textarea
+                  id="formDescription"
+                  value={formData.formDescription}
+                  onChange={(e) => handleFieldChange('formDescription', e.target.value)}
+                  placeholder="Instructions for the contact form"
+                  rows={2}
+                />
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        <TabsContent value="details" className="space-y-6">
-          <ContactDetailsForm
-            contactContent={contactContent}
-            onUpdate={handleContactInfoUpdate}
-            isUpdating={updateContactContentMutation.isPending}
-          />
-        </TabsContent>
+        <TabsContent value="translations" className="space-y-4">
+          <div className="grid gap-6">
+            {LANGUAGES.map((language) => (
+              <Card key={language.code}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <span className="text-2xl">{language.flag}</span>
+                    {language.name} Translation
+                  </CardTitle>
+                  <CardDescription>
+                    Content displayed when user's language is set to {language.name}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor={`${language.code}-title`}>Section Title</Label>
+                    <Input
+                      id={`${language.code}-title`}
+                      value={formData.translations[language.code as keyof typeof formData.translations]?.title || ''}
+                      onChange={(e) => handleTranslationChange(language.code, 'title', e.target.value)}
+                      placeholder={`Contact section title in ${language.name}`}
+                    />
+                  </div>
 
-        <TabsContent value="settings" className="space-y-6">
-          <EmailSettingsForm
-            contactContent={contactContent}
-            onUpdate={handleContactInfoUpdate}
-            isUpdating={updateContactContentMutation.isPending}
-          />
+                  <div>
+                    <Label htmlFor={`${language.code}-description`}>Section Description</Label>
+                    <Textarea
+                      id={`${language.code}-description`}
+                      value={formData.translations[language.code as keyof typeof formData.translations]?.description || ''}
+                      onChange={(e) => handleTranslationChange(language.code, 'description', e.target.value)}
+                      placeholder={`Brief description in ${language.name}`}
+                      rows={3}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor={`${language.code}-formTitle`}>Form Title</Label>
+                    <Input
+                      id={`${language.code}-formTitle`}
+                      value={formData.translations[language.code as keyof typeof formData.translations]?.formTitle || ''}
+                      onChange={(e) => handleTranslationChange(language.code, 'formTitle', e.target.value)}
+                      placeholder={`Contact form title in ${language.name}`}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor={`${language.code}-formDescription`}>Form Description</Label>
+                    <Textarea
+                      id={`${language.code}-formDescription`}
+                      value={formData.translations[language.code as keyof typeof formData.translations]?.formDescription || ''}
+                      onChange={(e) => handleTranslationChange(language.code, 'formDescription', e.target.value)}
+                      placeholder={`Form instructions in ${language.name}`}
+                      rows={2}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </TabsContent>
       </Tabs>
     </div>
-  );
-}
-
-interface FormProps {
-  contactContent?: ContactContent;
-  onUpdate: (data: Partial<InsertContactContent>) => void;
-  isUpdating: boolean;
-}
-
-function ContactContentForm({ contactContent, onUpdate, isUpdating }: FormProps) {
-  const [formData, setFormData] = useState({
-    heroTitleLv: contactContent?.heroTitleLv || "",
-    heroTitleRu: contactContent?.heroTitleRu || "",
-    heroTitleEn: contactContent?.heroTitleEn || "",
-    heroDescriptionLv: contactContent?.heroDescriptionLv || "",
-    heroDescriptionRu: contactContent?.heroDescriptionRu || "",
-    heroDescriptionEn: contactContent?.heroDescriptionEn || "",
-    formTitleLv: contactContent?.formTitleLv || "",
-    formTitleRu: contactContent?.formTitleRu || "",
-    formTitleEn: contactContent?.formTitleEn || "",
-    formDescriptionLv: contactContent?.formDescriptionLv || "",
-    formDescriptionRu: contactContent?.formDescriptionRu || "",
-    formDescriptionEn: contactContent?.formDescriptionEn || "",
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onUpdate(formData);
-  };
-
-  const updateField = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            Hero Section Content
-            <Badge variant="secondary">Multilingual</Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Hero Title */}
-          <div className="space-y-4">
-            <Label className="text-base font-semibold">Hero Title</Label>
-            <div className="grid gap-4">
-              {languages.map((lang) => (
-                <div key={`heroTitle${lang.code.charAt(0).toUpperCase() + lang.code.slice(1)}`} className="space-y-2">
-                  <Label className="flex items-center gap-2 text-sm font-medium">
-                    <span className="text-base">{lang.flag}</span>
-                    {lang.name}
-                  </Label>
-                  <Input
-                    value={formData[`heroTitle${lang.code.charAt(0).toUpperCase() + lang.code.slice(1)}` as keyof typeof formData]}
-                    onChange={(e) => updateField(`heroTitle${lang.code.charAt(0).toUpperCase() + lang.code.slice(1)}`, e.target.value)}
-                    placeholder={`Hero title in ${lang.name}`}
-                    className="font-medium"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Hero Description */}
-          <div className="space-y-4">
-            <Label className="text-base font-semibold">Hero Description</Label>
-            <div className="grid gap-4">
-              {languages.map((lang) => (
-                <div key={`heroDescription${lang.code.charAt(0).toUpperCase() + lang.code.slice(1)}`} className="space-y-2">
-                  <Label className="flex items-center gap-2 text-sm font-medium">
-                    <span className="text-base">{lang.flag}</span>
-                    {lang.name}
-                  </Label>
-                  <Textarea
-                    value={formData[`heroDescription${lang.code.charAt(0).toUpperCase() + lang.code.slice(1)}` as keyof typeof formData]}
-                    onChange={(e) => updateField(`heroDescription${lang.code.charAt(0).toUpperCase() + lang.code.slice(1)}`, e.target.value)}
-                    placeholder={`Hero description in ${lang.name}`}
-                    rows={3}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            Contact Form Content
-            <Badge variant="secondary">Multilingual</Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Form Title */}
-          <div className="space-y-4">
-            <Label className="text-base font-semibold">Form Title</Label>
-            <div className="grid gap-4">
-              {languages.map((lang) => (
-                <div key={`formTitle${lang.code.charAt(0).toUpperCase() + lang.code.slice(1)}`} className="space-y-2">
-                  <Label className="flex items-center gap-2 text-sm font-medium">
-                    <span className="text-base">{lang.flag}</span>
-                    {lang.name}
-                  </Label>
-                  <Input
-                    value={formData[`formTitle${lang.code.charAt(0).toUpperCase() + lang.code.slice(1)}` as keyof typeof formData]}
-                    onChange={(e) => updateField(`formTitle${lang.code.charAt(0).toUpperCase() + lang.code.slice(1)}`, e.target.value)}
-                    placeholder={`Form title in ${lang.name}`}
-                    className="font-medium"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Form Description */}
-          <div className="space-y-4">
-            <Label className="text-base font-semibold">Form Description</Label>
-            <div className="grid gap-4">
-              {languages.map((lang) => (
-                <div key={`formDescription${lang.code.charAt(0).toUpperCase() + lang.code.slice(1)}`} className="space-y-2">
-                  <Label className="flex items-center gap-2 text-sm font-medium">
-                    <span className="text-base">{lang.flag}</span>
-                    {lang.name}
-                  </Label>
-                  <Textarea
-                    value={formData[`formDescription${lang.code.charAt(0).toUpperCase() + lang.code.slice(1)}` as keyof typeof formData]}
-                    onChange={(e) => updateField(`formDescription${lang.code.charAt(0).toUpperCase() + lang.code.slice(1)}`, e.target.value)}
-                    placeholder={`Form description in ${lang.name}`}
-                    rows={3}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="flex justify-end">
-        <Button type="submit" disabled={isUpdating} className="min-w-32">
-          {isUpdating ? "Saving..." : "Save Content"}
-        </Button>
-      </div>
-    </form>
-  );
-}
-
-function ContactDetailsForm({ contactContent, onUpdate, isUpdating }: FormProps) {
-  const [formData, setFormData] = useState({
-    phone: contactContent?.phone || "",
-    email: contactContent?.email || "",
-    location: contactContent?.location || "",
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onUpdate(formData);
-  };
-
-  const updateField = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            Contact Information
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
-              Site-wide Display
-            </Badge>
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            This information will be displayed consistently across your entire website
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => updateField("phone", e.target.value)}
-                placeholder="+371 20123456"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => updateField("email", e.target.value)}
-                placeholder="info@chiptuningpro.lv"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="location">Location</Label>
-            <Input
-              id="location"
-              value={formData.location}
-              onChange={(e) => updateField("location", e.target.value)}
-              placeholder="Riga, Latvia"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="flex justify-end">
-        <Button type="submit" disabled={isUpdating} className="min-w-32">
-          {isUpdating ? "Saving..." : "Save Details"}
-        </Button>
-      </div>
-    </form>
-  );
-}
-
-function EmailSettingsForm({ contactContent, onUpdate, isUpdating }: FormProps) {
-  const [formData, setFormData] = useState({
-    quotesEmail: contactContent?.quotesEmail || "",
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onUpdate(formData);
-  };
-
-  const updateField = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            Email Configuration
-            <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-300">
-              Form Destination
-            </Badge>
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Configure where contact form submissions should be sent
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="quotesEmail">Quotes & Contact Form Email</Label>
-            <Input
-              id="quotesEmail"
-              type="email"
-              value={formData.quotesEmail}
-              onChange={(e) => updateField("quotesEmail", e.target.value)}
-              placeholder="quotes@chiptuningpro.lv"
-            />
-            <p className="text-xs text-muted-foreground">
-              All contact form submissions and quote requests will be sent to this email address
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="flex justify-end">
-        <Button type="submit" disabled={isUpdating} className="min-w-32">
-          {isUpdating ? "Saving..." : "Save Settings"}
-        </Button>
-      </div>
-    </form>
   );
 }

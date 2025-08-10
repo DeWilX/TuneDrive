@@ -8,7 +8,6 @@ import {
   insertServiceItemSchema,
   insertContactInfoSchema,
   insertGlobalContactInfoSchema,
-  insertContactPageContentSchema,
   insertContactContentSchema,
   insertVehicleSchema,
   insertPowerCalculatorDataSchema,
@@ -679,7 +678,7 @@ app.get("/api/vehicles/variants/:vehicleType/:brand/:model/:generation/:engine",
 
   app.put("/api/admin/contact-page-content", requireAuth, async (req: AuthRequest, res) => {
     try {
-      const validatedData = insertContactPageContentSchema.parse(req.body);
+      const validatedData = insertContactContentSchema.parse(req.body);
       const content = await storage.upsertContactPageContent(validatedData);
       res.json(content);
     } catch (error) {

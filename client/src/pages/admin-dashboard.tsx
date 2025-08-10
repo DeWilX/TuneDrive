@@ -21,7 +21,7 @@ import AnalyticsDashboard from "@/components/admin/analytics-dashboard";
 import HelpPanel from "@/components/admin/help-panel";
 import ZboxManagement from "@/components/admin/zbox-management";
 import WhyChooseUsManagement from "@/components/admin/why-choose-us-management";
-import { ContactManagement } from "@/components/admin/contact-management";
+import ContactManagement from "@/components/admin/contact-management";
 
 export default function AdminDashboard() {
   const { user, logout, isAuthenticated, token } = useAdmin();

@@ -237,7 +237,7 @@ export const insertGlobalContactInfoSchema = createInsertSchema(globalContactInf
   updatedAt: true,
 });
 
-export const insertContactPageContentSchema = createInsertSchema(contactPageContent).omit({
+export const insertContactContentSchema = createInsertSchema(contactContent).omit({
   id: true,
   updatedAt: true,
 });
@@ -294,8 +294,8 @@ export type InsertServiceItem = z.infer<typeof insertServiceItemSchema>;
 export type ServiceItem = typeof serviceItems.$inferSelect;
 export type InsertGlobalContactInfo = z.infer<typeof insertGlobalContactInfoSchema>;
 export type GlobalContactInfo = typeof globalContactInfo.$inferSelect;
-export type InsertContactPageContent = z.infer<typeof insertContactPageContentSchema>;
-export type ContactPageContent = typeof contactPageContent.$inferSelect;
+export type InsertContactContent = z.infer<typeof insertContactContentSchema>;
+export type ContactContent = typeof contactContent.$inferSelect;
 export type InsertContactInfo = z.infer<typeof insertContactInfoSchema>;
 export type ContactInfo = typeof contactInfo.$inferSelect;
 export type ZboxContent = typeof zboxContent.$inferSelect;
@@ -424,39 +424,4 @@ export type InsertVehicleSelection = z.infer<typeof insertVehicleSelectionSchema
 export type GeoLocation = typeof geoLocations.$inferSelect;
 export type InsertGeoLocation = z.infer<typeof insertGeoLocationSchema>;
 
-// Contact Content Management - with multilingual support
-export const contactContent = pgTable("contact_content", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  // Global contact information
-  phone: text("phone"),
-  email: text("email"),
-  location: text("location"),
-  quotesEmail: text("quotes_email"),
-  // Multilingual content - hero section
-  heroTitleLv: text("hero_title_lv"),
-  heroTitleRu: text("hero_title_ru"),
-  heroTitleEn: text("hero_title_en"),
-  heroDescriptionLv: text("hero_description_lv"),
-  heroDescriptionRu: text("hero_description_ru"),
-  heroDescriptionEn: text("hero_description_en"),
-  // Multilingual content - form section
-  formTitleLv: text("form_title_lv"),
-  formTitleRu: text("form_title_ru"),
-  formTitleEn: text("form_title_en"),
-  formDescriptionLv: text("form_description_lv"),
-  formDescriptionRu: text("form_description_ru"),
-  formDescriptionEn: text("form_description_en"),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
 
-// Contact content schema validations
-export const insertContactContentSchema = createInsertSchema(contactContent).omit({
-  id: true,
-  updatedAt: true,
-});
-
-export const contactContentSchema = insertContactContentSchema.partial();
-
-// Contact content types
-export type ContactContent = typeof contactContent.$inferSelect;
-export type InsertContactContent = z.infer<typeof insertContactContentSchema>;
