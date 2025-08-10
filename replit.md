@@ -8,7 +8,15 @@ The website is fully GDPR compliant with comprehensive privacy features includin
 
 ## Recent Enhancements (January 2025)
 
-### CareEcu API Integration with Unified System - COMPLETE INTEGRATION (Latest)
+### Power Checker Improvements - Car-Only System (Latest)
+- **Removed Vehicle Type Selection**: Eliminated car/truck/tractor selector per user request - now focuses only on cars
+- **Simplified Interface**: Streamlined power checker with direct brand selection without vehicle type confusion  
+- **Fixed Engine Data Issue**: Resolved "engines.map is not a function" error with proper array validation
+- **Consistent Data Flow**: Ensured engines always display correctly for the selected vehicle without cross-contamination
+- **Better Error Handling**: Added robust data validation to prevent runtime crashes from API response variations
+- **User-Focused Design**: Simplified interface reduces confusion and improves user experience for car tuning services
+
+### CareEcu API Integration with Unified System - COMPLETE INTEGRATION
 - **Updated API Endpoints**: Successfully integrated new CareEcu API endpoints with unified vehicle system
   - Brands: `https://api.carecusoft.com/en/v1/chiptuning?key=5c78cfd1ca4ff97888f564558177b3e7`
   - Models: `https://api.carecusoft.com/lv/v1/tuning/models/{brand_id}?key=5c78cfd1ca4ff97888f564558177b3e7`
