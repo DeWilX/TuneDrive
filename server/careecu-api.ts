@@ -128,12 +128,12 @@ export async function getBrands(): Promise<string[]> {
       );
     } else if (response && response.data && Array.isArray(response.data)) {
       brands = response.data.filter(
-        (item) =>
+        (item: any) =>
           item && typeof item === "object" && (item.name || item.var_title),
       );
     } else if (response && response.brands && Array.isArray(response.brands)) {
       brands = response.brands.filter(
-        (item) =>
+        (item: any) =>
           item && typeof item === "object" && (item.name || item.var_title),
       );
     }
@@ -148,7 +148,7 @@ export async function getBrands(): Promise<string[]> {
     console.log(
       `Successfully fetched ${brands.length} brands from CareEcu API`,
     );
-    return brands.map((brand) => brand.name || brand.var_title).sort();
+    return brands.map((brand) => brand.name || brand.var_title).filter(Boolean).sort();
   } catch (error) {
     console.error("Failed to fetch brands from CareEcu API:", error);
     throw new CareEcuApiError("Failed to fetch vehicle brands");
@@ -181,7 +181,7 @@ export async function getModels(brandName: string): Promise<string[]> {
     console.log(
       `Successfully fetched models for ${brandName} from CareEcu API: ${validModels.length}`,
     );
-    return validModels.map((model) => model.name || model.var_title).sort();
+    return validModels.map((model) => model.name || model.var_title).filter(Boolean).sort();
   } catch (error) {
     console.error(`Failed to fetch models for brand ${brandName}:`, error);
     throw error instanceof CareEcuApiError
@@ -239,6 +239,7 @@ export async function getYears(
     );
     return validYears
       .map((year) => year.year || year.var_title)
+      .filter(Boolean)
       .sort()
       .reverse();
   } catch (error) {
@@ -304,18 +305,38 @@ export async function getEngines(
       );
     }
 
-    // Get stages (engines)
-    const stages = await cachedApiRequest<CareEcuEngine[]>(
+    // IMPORTANT: CareEcu API's /stages/ endpoint returns tuning stages (ECO, STAGE 1) 
+    // NOT actual engine specifications. We need to extract engine info from the stage data
+    // or fall back to the static database for proper engine specifications.
+    const stages = await cachedApiRequest<CareEcuStage[]>(
       `${API_BASE_URL}/lv/v1/tuning/stages/${yearObj.id}?key=${API_KEY}`,
       cacheKey,
     );
+    
+    // Check if stages contain actual engine info (not just tuning stages)
     const validStages = stages.filter(
       (stage) => stage && (stage.name || stage.var_title),
     );
-    console.log(
-      `Successfully fetched engines for ${brandName} ${modelName} ${year}: ${validStages.length}`,
+    
+    // If we only get tuning stages (ECO, STAGE 1, etc.), this means CareEcu API
+    // doesn't have proper engine specifications for this vehicle
+    const stageNames = validStages.map((stage) => stage.name || stage.var_title || "");
+    const isTuningStagesOnly = stageNames.every(name => 
+      name.toUpperCase().includes("ECO") || 
+      name.toUpperCase().includes("STAGE") ||
+      name.toUpperCase().includes("STEP")
     );
-    return validStages.map((stage) => stage.name || stage.var_title).sort();
+    
+    if (isTuningStagesOnly) {
+      // CareEcu API only has tuning stages, not engine specifications
+      // This should trigger fallback to static database in the routes
+      throw new CareEcuApiError("CareEcu API returned tuning stages instead of engine specifications");
+    }
+    
+    console.log(
+      `Successfully fetched engines for ${brandName} ${modelName} ${year} from CareEcu API: ${validStages.length}`,
+    );
+    return stageNames.filter(name => name.length > 0).sort();
   } catch (error) {
     console.error(
       `Failed to fetch engines for ${brandName} ${modelName} ${year}:`,
@@ -395,19 +416,45 @@ export async function getTuningData(
       return null;
     }
 
-    const stage = stages.find(
-      (s) => (s.name || "").toLowerCase() === engineName.toLowerCase(),
+    // For CareEcu API, we need to find the ECO or original stage to get base power
+    // and STAGE 1 to get tuned power
+    const ecoStage = stages.find(
+      (s) => (s.name || "").toUpperCase().includes("ECO") || 
+             (s.name || "").toUpperCase().includes("ORIGINAL")
     );
-    if (!stage) {
-      return null;
+    const stage1 = stages.find(
+      (s) => (s.name || "").toUpperCase().includes("STAGE") ||
+             (s.name || "").toUpperCase().includes("STEP")
+    );
+    
+    if (!ecoStage && !stage1) {
+      // Try to find any stage that matches the engine name
+      const stage = stages.find(
+        (s) => (s.name || "").toLowerCase() === engineName.toLowerCase(),
+      );
+      if (!stage) {
+        return null;
+      }
+      
+      return {
+        originalPower: stage.hp_original,
+        originalTorque: stage.nm_original,
+        stage1Power: stage.hp_tuned,
+        stage1Torque: stage.nm_tuned,
+      };
     }
 
+    // Use ECO stage for original power and STAGE 1 for tuned power
+    const originalPower = ecoStage ? ecoStage.hp_original : (stage1?.hp_original || 0);
+    const originalTorque = ecoStage ? ecoStage.nm_original : (stage1?.nm_original || 0);
+    const stage1Power = stage1 ? stage1.hp_tuned : (ecoStage?.hp_tuned || 0);
+    const stage1Torque = stage1 ? stage1.nm_tuned : (ecoStage?.nm_tuned || 0);
+
     return {
-      originalPower: stage.hp_original,
-      originalTorque: stage.nm_original,
-      stage1Power: stage.hp_tuned,
-      stage1Torque: stage.nm_tuned,
-      // Optional: if you have stage 2 data add it here
+      originalPower,
+      originalTorque,
+      stage1Power,
+      stage1Torque,
     };
   } catch (error) {
     console.error(
