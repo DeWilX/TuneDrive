@@ -19,6 +19,7 @@ import UserManager from "@/components/admin/user-manager";
 import SiteIdentityManager from "@/components/admin/site-identity-manager";
 import AnalyticsDashboard from "@/components/admin/analytics-dashboard";
 import HelpPanel from "@/components/admin/help-panel";
+import ZboxManagement from "@/components/admin/zbox-management";
 
 export default function AdminDashboard() {
   const { user, logout, isAuthenticated, token } = useAdmin();
@@ -198,7 +199,7 @@ export default function AdminDashboard() {
         </Card>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="bg-gray-800 border-gray-700 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-1 h-auto p-1">
+          <TabsList className="bg-gray-800 border-gray-700 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-8 gap-1 h-auto p-1">
             <TabsTrigger value="overview" className="data-[state=active]:bg-accent-500 text-xs md:text-sm p-2">
               <i className="fas fa-chart-pie mr-1 md:mr-2"></i>
               <span className="hidden sm:inline">Dashboard</span>
@@ -218,6 +219,11 @@ export default function AdminDashboard() {
               <i className="fas fa-cogs mr-1 md:mr-2"></i>
               <span className="hidden sm:inline">Services</span>
               <span className="sm:hidden">Services</span>
+            </TabsTrigger>
+            <TabsTrigger value="zbox" className="data-[state=active]:bg-accent-500 text-xs md:text-sm p-2">
+              <i className="fas fa-microchip mr-1 md:mr-2"></i>
+              <span className="hidden sm:inline">ZBOX</span>
+              <span className="sm:hidden">ZBOX</span>
             </TabsTrigger>
             <TabsTrigger value="navigation" className="data-[state=active]:bg-accent-500 text-xs md:text-sm p-2">
               <i className="fas fa-compass mr-1 md:mr-2"></i>
@@ -380,12 +386,12 @@ export default function AdminDashboard() {
             <ServicesManagement />
           </TabsContent>
 
-          <TabsContent value="contact" className="space-y-6">
+          <TabsContent value="zbox" className="space-y-6">
             <div className="mb-6">
-              <h2 className="text-2xl font-bold text-white mb-2">Contact Information</h2>
-              <p className="text-gray-400">Update your business contact details - phone numbers, email, address, and WhatsApp. This information appears on your contact page.</p>
+              <h2 className="text-2xl font-bold text-white mb-2">ZBOX Chiptuning Device Content</h2>
+              <p className="text-gray-400">Manage the ZBOX section content, features, pricing, and translations for multiple languages.</p>
             </div>
-            <ContactManager token={token || ''} />
+            <ZboxManagement />
           </TabsContent>
 
           <TabsContent value="users" className="space-y-6">

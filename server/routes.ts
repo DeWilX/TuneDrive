@@ -14,7 +14,8 @@ import {
   insertPageViewSchema,
   insertClickEventSchema,
   insertVehicleSelectionSchema,
-  insertGeoLocationSchema
+  insertGeoLocationSchema,
+  insertZboxContentSchema
 } from "@shared/schema";
 import { login, requireAuth, type AuthRequest } from "./auth";
 import { z } from "zod";
@@ -462,6 +463,51 @@ app.get("/api/vehicles/variants/:vehicleType/:brand/:model/:generation/:engine",
       res.json({ message: "Service deleted" });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete service" });
+    }
+  });
+
+  // ZBOX content management routes
+  app.get("/api/zbox", async (req, res) => {
+    try {
+      const zboxContent = await storage.getZboxContent();
+      res.json(zboxContent || {
+        title: 'Introducing <span class="text-accent-500">ZBOX</span> Chiptuning Device',
+        description: 'Revolutionary plug-and-play chiptuning solution with smartphone app control. Easy installation, multiple power maps, and real-time adjustment capabilities.',
+        features: [
+          "Plug-and-play installation in 5 minutes",
+          "Multiple power maps via smartphone app", 
+          "Real-time performance monitoring",
+          "Reversible - no permanent changes"
+        ],
+        price: 'From €599',
+        priceNote: 'Including installation',
+        buttonText: 'Learn More About ZBOX'
+      });
+    } catch (error) {
+      console.error("Error fetching ZBOX content:", error);
+      res.status(500).json({ message: "Failed to fetch ZBOX content" });
+    }
+  });
+
+  app.get("/api/admin/zbox", requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const zboxContent = await storage.getZboxContent();
+      res.json(zboxContent);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch ZBOX content" });
+    }
+  });
+
+  app.put("/api/admin/zbox", requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const validatedData = insertZboxContentSchema.parse(req.body);
+      const zboxContent = await storage.upsertZboxContent(validatedData);
+      res.json(zboxContent);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update ZBOX content" });
     }
   });
 

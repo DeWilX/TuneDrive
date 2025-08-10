@@ -29,6 +29,8 @@ import {
   type InsertVehicleSelection,
   type GeoLocation,
   type InsertGeoLocation,
+  type ZboxContent,
+  type InsertZboxContent,
   vehicles,
   contactRequests,
   adminUsers,
@@ -43,7 +45,8 @@ import {
   pageViews,
   clickEvents,
   vehicleSelections,
-  geoLocations
+  geoLocations,
+  zboxContent
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql } from "drizzle-orm";
@@ -131,6 +134,10 @@ export interface IStorage {
   getClickStats(startDate?: Date, endDate?: Date): Promise<any[]>;
   getVehicleSelectionStats(startDate?: Date, endDate?: Date): Promise<any[]>;
   getGeoLocationStats(startDate?: Date, endDate?: Date): Promise<any[]>;
+  
+  // ZBOX content operations
+  getZboxContent(): Promise<ZboxContent | undefined>;
+  upsertZboxContent(content: InsertZboxContent): Promise<ZboxContent>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -720,6 +727,33 @@ export class DatabaseStorage implements IStorage {
     return await query
       .groupBy(geoLocations.country, geoLocations.city, sql`date(${geoLocations.lastSeen})`)
       .orderBy(sql`count(*) desc`, sql`date(${geoLocations.lastSeen})`);
+  }
+
+  // ZBOX content operations
+  async getZboxContent(): Promise<ZboxContent | undefined> {
+    const [result] = await db.select().from(zboxContent).where(eq(zboxContent.isActive, true)).limit(1);
+    return result || undefined;
+  }
+
+  async upsertZboxContent(contentData: InsertZboxContent): Promise<ZboxContent> {
+    const existing = await this.getZboxContent();
+    
+    if (existing) {
+      // Update existing
+      const [updated] = await db
+        .update(zboxContent)
+        .set({ ...contentData, updatedAt: new Date() })
+        .where(eq(zboxContent.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      // Create new
+      const [created] = await db
+        .insert(zboxContent)
+        .values(contentData)
+        .returning();
+      return created;
+    }
   }
 }
 
