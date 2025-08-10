@@ -17,7 +17,7 @@ export default function Hero() {
     queryKey: ['/api/site-identity'],
   });
 
-  const heroContent = pageContent.find((content: any) => content.section === 'hero') || {
+  const heroContent = (pageContent as any[])?.find((content: any) => content.section === 'hero') || {
     title: 'Professional<br /><span class="text-accent-500">ECU Tuning</span><br />& Performance Enhancement',
     content: 'Unlock your vehicle\'s true potential with our advanced chiptuning solutions. Over 15 years of experience in automotive performance optimization.'
   };
@@ -34,7 +34,7 @@ export default function Hero() {
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: `url('${siteIdentity.heroImageUrl || 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1920&h=1080'}')`
+          backgroundImage: `url('${(siteIdentity as any)?.heroImageUrl || 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1920&h=1080'}')`
         }}
       />
       <div className="absolute inset-0 bg-gradient-to-r from-gray-900/90 via-gray-900/70 to-transparent"></div>
@@ -51,15 +51,15 @@ export default function Hero() {
           {/* Stats */}
           <div className="grid grid-cols-3 gap-6 mb-8 text-center">
             <div>
-              <div className="text-3xl font-bold text-accent-500 mb-1">{heroContent.stat1Value || '5000+'}</div>
+              <div className="text-3xl font-bold text-accent-500 mb-1">{(siteIdentity as any)?.clientCount || heroContent.stat1Value || '500'}</div>
               <div className="text-sm text-gray-400">{heroContent.stat1Label || t.hero.statsClients}</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-accent-500 mb-1">{heroContent.stat2Value || '8000+'}</div>
+              <div className="text-3xl font-bold text-accent-500 mb-1">{(siteIdentity as any)?.projectCount || heroContent.stat2Value || '1200'}</div>
               <div className="text-sm text-gray-400">{heroContent.stat2Label || t.hero.statsProjects}</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-accent-500 mb-1">{heroContent.stat3Value || '15+'}</div>
+              <div className="text-3xl font-bold text-accent-500 mb-1">{(siteIdentity as any)?.experienceYears || heroContent.stat3Value || '10'}+</div>
               <div className="text-sm text-gray-400">{heroContent.stat3Label || t.hero.statsExperience}</div>
             </div>
           </div>

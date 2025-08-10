@@ -103,7 +103,7 @@ export interface IStorage {
   deleteTranslation(id: string): Promise<void>;
 
   // Language management
-  getLanguages(): Promise<Language[]>;
+  getAllLanguages(): Promise<Language[]>;
   getLanguageByCode(code: string): Promise<Language | undefined>;
   createLanguage(language: InsertLanguage): Promise<Language>;
   updateLanguage(code: string, language: Partial<InsertLanguage>): Promise<Language | undefined>;
@@ -469,7 +469,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Language management
-  async getLanguages(): Promise<Language[]> {
+  async getAllLanguages(): Promise<Language[]> {
     return await db
       .select()
       .from(languages)

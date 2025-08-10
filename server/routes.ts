@@ -385,6 +385,16 @@ app.get("/api/vehicles/variants/:vehicleType/:brand/:model/:generation/:engine",
     }
   });
 
+  // Language management routes
+  app.get("/api/admin/languages", requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const languages = await storage.getAllLanguages();
+      res.json(languages);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch languages" });
+    }
+  });
+
   app.get("/api/admin/services", requireAuth, async (req: AuthRequest, res) => {
     try {
       const services = await storage.getAllServiceItems();
