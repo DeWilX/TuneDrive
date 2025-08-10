@@ -74,6 +74,13 @@ export interface IStorage {
   getPageContent(pageName: string): Promise<PageContent | undefined>;
   upsertPageContent(content: InsertPageContent): Promise<PageContent>;
   
+  // Services management operations
+  getAllServices(): Promise<ServiceItem[]>;
+  getService(id: string): Promise<ServiceItem | undefined>;
+  createService(service: InsertServiceItem): Promise<ServiceItem>;
+  updateService(id: string, service: Partial<InsertServiceItem>): Promise<ServiceItem | undefined>;
+  deleteService(id: string): Promise<void>;
+  
   getAllNavigationItems(): Promise<NavigationItem[]>;
   createNavigationItem(item: InsertNavigationItem): Promise<NavigationItem>;
   updateNavigationItem(id: string, item: Partial<InsertNavigationItem>): Promise<NavigationItem>;
@@ -325,6 +332,48 @@ export class DatabaseStorage implements IStorage {
       .update(navigationItems)
       .set({ isActive: false, updatedAt: new Date() })
       .where(eq(navigationItems.id, id));
+  }
+
+  // Services management operations  
+  async getAllServices(): Promise<ServiceItem[]> {
+    return await db
+      .select()
+      .from(serviceItems)
+      .where(eq(serviceItems.isActive, true))
+      .orderBy(serviceItems.order);
+  }
+
+  async getService(id: string): Promise<ServiceItem | undefined> {
+    const [result] = await db
+      .select()
+      .from(serviceItems)
+      .where(and(eq(serviceItems.id, id), eq(serviceItems.isActive, true)))
+      .limit(1);
+    return result;
+  }
+
+  async createService(service: InsertServiceItem): Promise<ServiceItem> {
+    const [result] = await db
+      .insert(serviceItems)
+      .values(service)
+      .returning();
+    return result;
+  }
+
+  async updateService(id: string, service: Partial<InsertServiceItem>): Promise<ServiceItem | undefined> {
+    const [result] = await db
+      .update(serviceItems)
+      .set({ ...service, updatedAt: new Date() })
+      .where(eq(serviceItems.id, id))
+      .returning();
+    return result;
+  }
+
+  async deleteService(id: string): Promise<void> {
+    await db
+      .update(serviceItems)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(serviceItems.id, id));
   }
 
   async getAllServiceItems(): Promise<ServiceItem[]> {
