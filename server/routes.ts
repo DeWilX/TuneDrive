@@ -406,6 +406,19 @@ app.get("/api/vehicles/variants/:vehicleType/:brand/:model/:generation/:engine",
     }
   });
 
+  // Public services endpoint for main page
+  app.get("/api/services", async (req, res) => {
+    try {
+      const services = await storage.getAllServiceItems();
+      // Only return active services for public display
+      const activeServices = services.filter(service => service.isActive !== false);
+      res.json(activeServices);
+    } catch (error) {
+      console.error("Error fetching public services:", error);
+      res.status(500).json({ message: "Failed to fetch services" });
+    }
+  });
+
   app.get("/api/admin/services", requireAuth, async (req: AuthRequest, res) => {
     try {
       const services = await storage.getAllServiceItems();
