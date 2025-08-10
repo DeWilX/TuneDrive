@@ -17,6 +17,9 @@ interface VehiclePower {
   stage1TorqueGain?: number;
   stage2PowerGain?: number;
   stage2TorqueGain?: number;
+  stage1FuelEconomy?: number;
+  stage2FuelEconomy?: number;
+  brandLogo?: string;
 }
 
 export default function PowerChecker() {
@@ -228,7 +231,19 @@ export default function PowerChecker() {
                   {/* Vehicle Info Header */}
                   <div className="flex items-center justify-center mb-4">
                     <div className="bg-white rounded-full p-3 mr-4">
-                      <i className="fas fa-car text-gray-700 text-xl"></i>
+                      {powerData.brandLogo ? (
+                        <img 
+                          src={powerData.brandLogo} 
+                          alt={`${selectedBrand} logo`}
+                          className="w-8 h-8 object-contain"
+                          onError={(e) => {
+                            // Fallback to car icon if logo fails to load
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                      ) : null}
+                      <i className={`fas fa-car text-gray-700 text-xl ${powerData.brandLogo ? 'hidden' : ''}`}></i>
                     </div>
                     <div className="text-center">
                       <h3 className="text-lg font-bold text-white">{selectedBrand} {selectedModel}</h3>
@@ -250,9 +265,11 @@ export default function PowerChecker() {
                     {/* Stage 1 Card */}
                     <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-6 text-center shadow-lg border border-gray-700">
                       <div className="flex items-center justify-center mb-3 space-x-2">
-                        <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
-                          +{powerData.stage1PowerGain}% FUEL
-                        </span>
+                        {powerData.stage1FuelEconomy && (
+                          <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                            +{powerData.stage1FuelEconomy}% FUEL
+                          </span>
+                        )}
                         <h3 className="font-bold text-white text-sm uppercase tracking-wider">STAGE 1</h3>
                       </div>
                       <div className="text-3xl font-bold text-white mb-1">{powerData.stage1Power}<span className="text-lg font-normal text-gray-300">HP</span></div>
@@ -268,9 +285,11 @@ export default function PowerChecker() {
                     {powerData.stage2Power && (
                       <div className="bg-gradient-to-br from-gray-900 to-black rounded-xl p-6 text-center shadow-lg border border-gray-600">
                         <div className="flex items-center justify-center mb-3 space-x-2">
-                          <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
-                            +{powerData.stage2PowerGain}% FUEL
-                          </span>
+                          {powerData.stage2FuelEconomy && (
+                            <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                              +{powerData.stage2FuelEconomy}% FUEL
+                            </span>
+                          )}
                           <h3 className="font-bold text-white text-sm uppercase tracking-wider">STAGE 2</h3>
                         </div>
                         <div className="text-3xl font-bold text-white mb-1">{powerData.stage2Power}<span className="text-lg font-normal text-gray-300">HP</span></div>
