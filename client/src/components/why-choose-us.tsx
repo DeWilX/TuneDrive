@@ -55,6 +55,11 @@ export default function WhyChooseUs() {
       };
     }
 
+    // Debug logging
+    console.log('Current language:', language);
+    console.log('Available translations:', whyChooseUsContent.translations);
+    console.log('Translation for current language:', whyChooseUsContent.translations?.[language]);
+
     // If no translations exist or language doesn't have translation, use original content
     if (!whyChooseUsContent.translations || !whyChooseUsContent.translations[language]) {
       return {
@@ -70,13 +75,35 @@ export default function WhyChooseUs() {
 
     const translation = whyChooseUsContent.translations[language];
 
+    // Get features with translation support
+    const getTranslatedFeatures = () => {
+      const originalFeatures = Array.isArray(whyChooseUsContent.features) && whyChooseUsContent.features.length > 0 
+        ? whyChooseUsContent.features 
+        : defaultFeatures;
+      
+      // If no translated features, use original
+      if (!Array.isArray(translation.features) || translation.features.length === 0) {
+        return originalFeatures;
+      }
+      
+      // Merge translated features with original features
+      return originalFeatures.map((originalFeature, index) => {
+        const translatedFeature = translation.features[index];
+        if (!translatedFeature) return originalFeature;
+        
+        return {
+          icon: originalFeature.icon,
+          title: (translatedFeature.title && translatedFeature.title.trim()) || originalFeature.title,
+          description: (translatedFeature.description && translatedFeature.description.trim()) || originalFeature.description
+        };
+      });
+    };
+
     // Merge translation with original content, prioritizing non-empty translation fields
     return {
       title: (translation.title && translation.title.trim()) || whyChooseUsContent.title,
       description: (translation.description && translation.description.trim()) || whyChooseUsContent.description,
-      features: Array.isArray(whyChooseUsContent.features) && whyChooseUsContent.features.length > 0 
-        ? whyChooseUsContent.features
-        : defaultFeatures,
+      features: getTranslatedFeatures(),
       workshopTitle: (translation.workshopTitle && translation.workshopTitle.trim()) || whyChooseUsContent.workshopTitle,
       workshopDescription: (translation.workshopDescription && translation.workshopDescription.trim()) || whyChooseUsContent.workshopDescription,
       workshopFeatures: (Array.isArray(translation.workshopFeatures) && translation.workshopFeatures.length > 0) 
