@@ -11,9 +11,28 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import { toast } from "@/hooks/use-toast";
-import { Pen, Trash2, Plus, Upload } from "lucide-react";
+import { Pen, Trash2, Plus, Upload, GripVertical } from "lucide-react";
 import type { ServiceItem, InsertServiceItem } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import {
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface ServiceFormData {
   title: string;
@@ -52,6 +71,14 @@ export function ServicesManagement() {
 
   const queryClient = useQueryClient();
 
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   const { data: services = [], isLoading } = useQuery({
     queryKey: ["/api/admin/services"],
     queryFn: async () => {
@@ -85,6 +112,7 @@ export function ServicesManagement() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/services"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/services"] });
       setIsFormOpen(false);
       resetForm();
       toast({ title: "Service created successfully" });
@@ -107,6 +135,7 @@ export function ServicesManagement() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/services"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/services"] });
       setIsFormOpen(false);
       resetForm();
       toast({ title: "Service updated successfully" });
@@ -125,10 +154,33 @@ export function ServicesManagement() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/services"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/services"] });
       toast({ title: "Service deleted successfully" });
     },
     onError: () => {
       toast({ title: "Failed to delete service", variant: "destructive" });
+    },
+  });
+
+  const reorderServicesMutation = useMutation({
+    mutationFn: async (reorderedServices: ServiceItem[]) => {
+      const authFetch = (window as any).authFetch || fetch;
+      const promises = reorderedServices.map((service, index) =>
+        authFetch(`/api/admin/services/${service.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ order: index + 1 }),
+        })
+      );
+      await Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/services"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/services"] });
+      toast({ title: "Services reordered successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to reorder services", variant: "destructive" });
     },
   });
 
@@ -258,9 +310,119 @@ export function ServicesManagement() {
     }
   };
 
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = services.findIndex((service: ServiceItem) => service.id === active.id);
+      const newIndex = services.findIndex((service: ServiceItem) => service.id === over.id);
+
+      const reorderedServices = arrayMove(services, oldIndex, newIndex);
+      reorderServicesMutation.mutate(reorderedServices);
+    }
+  };
+
   if (isLoading) {
     return <div>Loading services...</div>;
   }
+
+  // Sortable service card component
+  const SortableServiceCard = ({ service }: { service: ServiceItem }) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+    } = useSortable({ id: service.id });
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+    };
+
+    return (
+      <Card 
+        ref={setNodeRef} 
+        style={style} 
+        className="bg-gray-800 border-gray-700 cursor-grab active:cursor-grabbing"
+      >
+        <CardHeader className="pb-4">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
+                <GripVertical className="h-5 w-5 text-gray-400" />
+              </div>
+              <i className={`${service.icon} text-accent-500 text-xl`}></i>
+              <div>
+                <CardTitle className="text-white text-lg">{service.title}</CardTitle>
+                <Badge variant="secondary" className="mt-1">
+                  Order: {service.order}
+                </Badge>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => openEditForm(service)}
+              >
+                <Pen className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => deleteServiceMutation.mutate(service.id)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-gray-300 text-sm mb-4">{service.description}</p>
+          
+          {service.image && (
+            <div className="mb-4">
+              <img 
+                src={service.image} 
+                alt={service.title}
+                className="w-full h-32 object-cover rounded-lg"
+              />
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label className="text-gray-300">Features:</Label>
+            <ul className="text-sm text-gray-400 space-y-1">
+              {Array.isArray(service.features) && service.features.map((feature, index) => (
+                <li key={index} className="flex items-center">
+                  <span className="w-2 h-2 bg-accent-500 rounded-full mr-2"></span>
+                  {feature}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <Separator className="my-4" />
+          
+          <div className="flex justify-between items-center">
+            <span className="text-accent-500 font-semibold">{service.price}</span>
+            <ObjectUploader
+              maxNumberOfFiles={1}
+              maxFileSize={5242880} // 5MB
+              onGetUploadParameters={handleGetUploadParameters}
+              onComplete={(result) => handleImageUploadComplete(result, service.id)}
+              buttonClassName="text-xs"
+            >
+              <Upload className="h-3 w-3 mr-1" />
+              Update Image
+            </ObjectUploader>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -272,82 +434,24 @@ export function ServicesManagement() {
         </Button>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {services.map((service: ServiceItem) => (
-          <Card key={service.id} className="bg-gray-800 border-gray-700">
-            <CardHeader className="pb-4">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <i className={`${service.icon} text-accent-500 text-xl`}></i>
-                  <div>
-                    <CardTitle className="text-white text-lg">{service.title}</CardTitle>
-                    <Badge variant="secondary" className="mt-1">
-                      Order: {service.order}
-                    </Badge>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => openEditForm(service)}
-                  >
-                    <Pen className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => deleteServiceMutation.mutate(service.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-300 text-sm mb-4">{service.description}</p>
-              
-              {service.image && (
-                <div className="mb-4">
-                  <img 
-                    src={service.image} 
-                    alt={service.title}
-                    className="w-full h-32 object-cover rounded-lg"
-                  />
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label className="text-gray-300">Features:</Label>
-                <ul className="text-sm text-gray-400 space-y-1">
-                  {Array.isArray(service.features) && service.features.map((feature, index) => (
-                    <li key={index} className="flex items-center">
-                      <span className="w-2 h-2 bg-accent-500 rounded-full mr-2"></span>
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <Separator className="my-4" />
-              
-              <div className="flex justify-between items-center">
-                <span className="text-accent-500 font-semibold">{service.price}</span>
-                <ObjectUploader
-                  maxNumberOfFiles={1}
-                  maxFileSize={5242880} // 5MB
-                  onGetUploadParameters={handleGetUploadParameters}
-                  onComplete={(result) => handleImageUploadComplete(result, service.id)}
-                  buttonClassName="text-xs"
-                >
-                  <Upload className="h-3 w-3 mr-1" />
-                  Update Image
-                </ObjectUploader>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext 
+          items={services.map((s: ServiceItem) => s.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {services
+              .sort((a: ServiceItem, b: ServiceItem) => (a.order || 0) - (b.order || 0))
+              .map((service: ServiceItem) => (
+                <SortableServiceCard key={service.id} service={service} />
+              ))}
+          </div>
+        </SortableContext>
+      </DndContext>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-700">
