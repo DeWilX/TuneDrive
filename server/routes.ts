@@ -9,6 +9,7 @@ import {
   insertContactInfoSchema,
   insertGlobalContactInfoSchema,
   insertContactPageContentSchema,
+  insertContactContentSchema,
   insertVehicleSchema,
   insertPowerCalculatorDataSchema,
   insertTranslationSchema,
@@ -709,6 +710,42 @@ app.get("/api/vehicles/variants/:vehicleType/:brand/:model/:generation/:engine",
     } catch (error) {
       console.error("Error fetching contact page content:", error);
       res.status(500).json({ message: "Failed to fetch contact page content" });
+    }
+  });
+
+  // Contact Content Management Routes (multilingual)
+  app.get("/api/admin/contact-content", requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const content = await storage.getContactContent();
+      res.json(content);
+    } catch (error) {
+      console.error("Error fetching contact content:", error);
+      res.status(500).json({ message: "Failed to fetch contact content" });
+    }
+  });
+
+  app.put("/api/admin/contact-content", requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const validatedData = insertContactContentSchema.parse(req.body);
+      const content = await storage.upsertContactContent(validatedData);
+      res.json(content);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      console.error("Error updating contact content:", error);
+      res.status(500).json({ message: "Failed to update contact content" });
+    }
+  });
+
+  // Public route to get contact content
+  app.get("/api/contact-content", async (req, res) => {
+    try {
+      const content = await storage.getContactContent();
+      res.json(content);
+    } catch (error) {
+      console.error("Error fetching contact content:", error);
+      res.status(500).json({ message: "Failed to fetch contact content" });
     }
   });
 
