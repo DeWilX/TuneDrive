@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import { toast } from "@/hooks/use-toast";
-import { Pen, Trash2, Plus, Upload, DragDropIcon } from "lucide-react";
+import { Pen, Trash2, Plus, Upload } from "lucide-react";
 import type { ServiceItem, InsertServiceItem } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -47,25 +47,42 @@ export function ServicesManagement() {
     features: [""],
     price: "",
     order: 1,
-    translations: {}
+    translations: {} as { [languageCode: string]: { title: string; description: string; } }
   });
 
   const queryClient = useQueryClient();
 
   const { data: services = [], isLoading } = useQuery({
     queryKey: ["/api/admin/services"],
+    queryFn: async () => {
+      const authFetch = (window as any).authFetch || fetch;
+      const response = await authFetch("/api/admin/services");
+      if (!response.ok) throw new Error("Failed to fetch services");
+      return response.json();
+    },
   });
 
   const { data: languages = defaultLanguages } = useQuery({
     queryKey: ["/api/admin/languages"],
+    queryFn: async () => {
+      const authFetch = (window as any).authFetch || fetch;
+      const response = await authFetch("/api/admin/languages");
+      if (!response.ok) return defaultLanguages;
+      return response.json();
+    },
   });
 
   const createServiceMutation = useMutation({
-    mutationFn: (data: InsertServiceItem) => apiRequest("/api/admin/services", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    }),
+    mutationFn: async (data: InsertServiceItem) => {
+      const authFetch = (window as any).authFetch || fetch;
+      const response = await authFetch("/api/admin/services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error("Failed to create service");
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/services"] });
       setIsFormOpen(false);
@@ -78,12 +95,16 @@ export function ServicesManagement() {
   });
 
   const updateServiceMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<InsertServiceItem> }) =>
-      apiRequest(`/api/admin/services/${id}`, {
+    mutationFn: async ({ id, data }: { id: string; data: Partial<InsertServiceItem> }) => {
+      const authFetch = (window as any).authFetch || fetch;
+      const response = await authFetch(`/api/admin/services/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }),
+      });
+      if (!response.ok) throw new Error("Failed to update service");
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/services"] });
       setIsFormOpen(false);
@@ -96,8 +117,12 @@ export function ServicesManagement() {
   });
 
   const deleteServiceMutation = useMutation({
-    mutationFn: (id: string) =>
-      apiRequest(`/api/admin/services/${id}`, { method: "DELETE" }),
+    mutationFn: async (id: string) => {
+      const authFetch = (window as any).authFetch || fetch;
+      const response = await authFetch(`/api/admin/services/${id}`, { method: "DELETE" });
+      if (!response.ok) throw new Error("Failed to delete service");
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/services"] });
       toast({ title: "Service deleted successfully" });
@@ -108,12 +133,16 @@ export function ServicesManagement() {
   });
 
   const uploadImageMutation = useMutation({
-    mutationFn: ({ id, imageURL }: { id: string; imageURL: string }) =>
-      apiRequest(`/api/admin/services/${id}/image`, {
+    mutationFn: async ({ id, imageURL }: { id: string; imageURL: string }) => {
+      const authFetch = (window as any).authFetch || fetch;
+      const response = await authFetch(`/api/admin/services/${id}/image`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ imageURL }),
-      }),
+      });
+      if (!response.ok) throw new Error("Failed to update service image");
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/services"] });
       toast({ title: "Service image updated successfully" });
@@ -131,7 +160,7 @@ export function ServicesManagement() {
       features: [""],
       price: "",
       order: services.length + 1,
-      translations: {}
+      translations: {} as { [languageCode: string]: { title: string; description: string; } }
     });
     setSelectedService(null);
   };
@@ -146,7 +175,7 @@ export function ServicesManagement() {
       features: Array.isArray(service.features) ? service.features : [""],
       price: service.price,
       order: service.order,
-      translations: service.translations || {}
+      translations: service.translations || {} as { [languageCode: string]: { title: string; description: string; } }
     });
     setIsFormOpen(true);
   };
@@ -205,7 +234,8 @@ export function ServicesManagement() {
       translations: {
         ...prev.translations,
         [languageCode]: {
-          ...prev.translations?.[languageCode],
+          title: prev.translations?.[languageCode]?.title || "",
+          description: prev.translations?.[languageCode]?.description || "",
           [field]: value
         }
       }
@@ -377,6 +407,18 @@ export function ServicesManagement() {
                     className="bg-gray-800 border-gray-600 text-white"
                   />
                 </div>
+              </div>
+
+              <div>
+                <Label htmlFor="image" className="text-gray-300">Image URL (Optional)</Label>
+                <Input
+                  id="image"
+                  value={formData.image || ""}
+                  onChange={(e) => setFormData(prev => ({ ...prev, image: e.target.value }))}
+                  placeholder="https://example.com/image.jpg or /objects/path/to/image.jpg"
+                  className="bg-gray-800 border-gray-600 text-white"
+                />
+                <p className="text-xs text-gray-400 mt-1">You can paste a direct image URL here or upload using the button below</p>
               </div>
 
               <div>
