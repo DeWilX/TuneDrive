@@ -55,23 +55,71 @@ export default function WhyChooseUsManagement() {
   const [newFeature, setNewFeature] = useState<Feature>({ icon: '', title: '', description: '' });
   const [newWorkshopFeature, setNewWorkshopFeature] = useState('');
 
-  // Fetch current content
+  // Fetch current content with authentication
   const { data: currentContent, isLoading } = useQuery<any>({
     queryKey: ['/api/admin/why-choose-us'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/why-choose-us', {
+        headers: {
+          'Authorization': `Bearer ${(window as any).authToken}`
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch content');
+      }
+      return response.json();
+    }
   });
 
   // Update form when content loads
   useEffect(() => {
     if (currentContent) {
       setFormData({
-        title: currentContent.title || '',
-        description: currentContent.description || '',
-        features: Array.isArray(currentContent.features) ? currentContent.features : [],
-        workshopTitle: currentContent.workshopTitle || '',
-        workshopDescription: currentContent.workshopDescription || '',
-        workshopFeatures: Array.isArray(currentContent.workshopFeatures) ? currentContent.workshopFeatures : [],
+        title: currentContent.title || 'Why Choose ChipTuning PRO?',
+        description: currentContent.description || 'Over 15 years of experience in professional automotive tuning with thousands of satisfied customers worldwide',
+        features: Array.isArray(currentContent.features) && currentContent.features.length > 0 ? currentContent.features : [],
+        workshopTitle: currentContent.workshopTitle || 'Professional Workshop & Equipment',
+        workshopDescription: currentContent.workshopDescription || 'Our state-of-the-art facility is equipped with the latest diagnostic tools, professional dynamometer, and specialized software for all major vehicle brands.',
+        workshopFeatures: Array.isArray(currentContent.workshopFeatures) && currentContent.workshopFeatures.length > 0 ? currentContent.workshopFeatures : [],
         workshopImage: currentContent.workshopImage || '',
-        translations: currentContent.translations || {}
+        translations: currentContent.translations || {
+          'lv': {
+            title: 'Kāpēc izvēlēties ChipTuning PRO?',
+            description: 'Vairāk nekā 15 gadu pieredze profesionālā automobiļu tuninga jomā ar tūkstošiem apmierinātu klientu visā pasaulē',
+            workshopTitle: 'Profesionāla darbnīca un aprīkojums',
+            workshopDescription: 'Mūsu mūsdienīgais uzņēmums ir aprīkots ar jaunākajiem diagnostikas rīkiem, profesionālu dinamometru un specializētu programmatūru visiem galvenajiem automobiļu zīmoliem.'
+          }
+        }
+      });
+    } else {
+      // Set default content if no current content exists
+      setFormData({
+        title: 'Why Choose ChipTuning PRO?',
+        description: 'Over 15 years of experience in professional automotive tuning with thousands of satisfied customers worldwide',
+        features: [
+          { icon: 'fa-award', title: '15+ Years Experience', description: 'Proven expertise in automotive tuning' },
+          { icon: 'fa-tachometer-alt', title: 'Professional Equipment', description: 'State-of-the-art diagnostic tools' },
+          { icon: 'fa-user-cog', title: 'Certified Technicians', description: 'Highly trained professionals' },
+          { icon: 'fa-shield-alt', title: 'Warranty Coverage', description: 'Full guarantee on all work' }
+        ],
+        workshopTitle: 'Professional Workshop & Equipment',
+        workshopDescription: 'Our state-of-the-art facility is equipped with the latest diagnostic tools, professional dynamometer, and specialized software for all major vehicle brands.',
+        workshopFeatures: [
+          'Professional dynamometer testing',
+          'Latest diagnostic equipment',
+          'Specialized tuning software',
+          'Climate-controlled workshop',
+          'Certified technicians'
+        ],
+        workshopImage: '',
+        translations: {
+          'lv': {
+            title: 'Kāpēc izvēlēties ChipTuning PRO?',
+            description: 'Vairāk nekā 15 gadu pieredze profesionālā automobiļu tuninga jomā ar tūkstošiem apmierinātu klientu visā pasaulē',
+            workshopTitle: 'Profesionāla darbnīca un aprīkojums',
+            workshopDescription: 'Mūsu mūsdienīgais uzņēmums ir aprīkots ar jaunākajiem diagnostikas rīkiem, profesionālu dinamometru un specializētu programmatūru visiem galvenajiem automobiļu zīmoliem.'
+          }
+        }
       });
     }
   }, [currentContent]);
@@ -184,18 +232,36 @@ export default function WhyChooseUsManagement() {
             Manage the "Why Choose ChipTuning PRO" section content and features
           </p>
         </div>
-        <Button onClick={handleSave} disabled={saveMutation.isPending}>
-          <Save className="w-4 h-4 mr-2" />
-          {saveMutation.isPending ? 'Saving...' : 'Save Changes'}
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleSave} 
+            disabled={saveMutation.isPending}
+            className="bg-accent-600 hover:bg-accent-700 text-white font-semibold px-6"
+            size="lg"
+          >
+            <Save className="w-5 h-5 mr-2" />
+            {saveMutation.isPending ? 'Saving...' : 'Save All Changes'}
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="content" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="content">Main Content</TabsTrigger>
-          <TabsTrigger value="features">Features</TabsTrigger>
-          <TabsTrigger value="translations">Translations</TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between mb-4">
+          <TabsList className="grid w-full max-w-md grid-cols-3">
+            <TabsTrigger value="content">Main Content</TabsTrigger>
+            <TabsTrigger value="features">Features</TabsTrigger>
+            <TabsTrigger value="translations">Translations</TabsTrigger>
+          </TabsList>
+          <Button 
+            onClick={handleSave} 
+            disabled={saveMutation.isPending}
+            variant="default"
+            className="bg-accent-600 hover:bg-accent-700 text-white"
+          >
+            <Save className="w-4 h-4 mr-2" />
+            {saveMutation.isPending ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </div>
 
         {/* Main Content Tab */}
         <TabsContent value="content" className="space-y-6">
@@ -392,8 +458,9 @@ export default function WhyChooseUsManagement() {
                 <select
                   value={selectedLanguage}
                   onChange={(e) => setSelectedLanguage(e.target.value)}
-                  className="w-full p-2 border rounded-md bg-background"
+                  className="w-full p-2 border rounded-md bg-background text-foreground"
                 >
+                  <option value="en">English (en)</option>
                   <option value="lv">Latvian (lv)</option>
                   <option value="ru">Russian (ru)</option>
                   <option value="de">German (de)</option>
