@@ -15,8 +15,8 @@ import {
   type InsertContactInfo,
   type GlobalContactInfo,
   type InsertGlobalContactInfo,
-  type ContactPageContent,
-  type InsertContactPageContent,
+  type ContactContent,
+  type InsertContactContent,
   type PowerCalculatorData,
   type InsertPowerCalculatorData,
   type Translation,
@@ -47,7 +47,7 @@ import {
   serviceItems,
   contactInfo,
   globalContactInfo,
-  contactPageContent,
+  contactContent,
   powerCalculatorData,
   translations,
   languages,
@@ -159,11 +159,7 @@ export interface IStorage {
   getGlobalContactInfo(): Promise<GlobalContactInfo | undefined>;
   upsertGlobalContactInfo(info: Partial<InsertGlobalContactInfo>): Promise<GlobalContactInfo>;
   
-  // Contact page content operations
-  getContactPageContent(): Promise<ContactPageContent | undefined>;
-  upsertContactPageContent(content: Partial<InsertContactPageContent>): Promise<ContactPageContent>;
-  
-  // Contact content operations (multilingual)
+  // Contact content operations
   getContactContent(): Promise<ContactContent | undefined>;
   upsertContactContent(content: Partial<InsertContactContent>): Promise<ContactContent>;
 }
@@ -903,24 +899,31 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return updated;
     } else {
-      const defaultContent = {
-        phone: "+371 20123456",
-        email: "info@chiptuningpro.lv",
-        location: "Riga, Latvia",
-        quotesEmail: "quotes@chiptuningpro.lv",
-        heroTitleLv: "Saņemiet Bezmaksas Piedāvājumu",
-        heroTitleRu: "Получите Бесплатное Предложение",
-        heroTitleEn: "Get Your Free Quote",
-        heroDescriptionLv: "Sazinieties ar mums profesionālu ECU čipošanas pakalpojumu saņemšanai",
-        heroDescriptionRu: "Свяжитесь с нами для получения профессиональных услуг по чип-тюнингу ECU",
-        heroDescriptionEn: "Contact us for professional ECU tuning services",
-        formTitleLv: "Pieprasiet Savu Piedāvājumu",
-        formTitleRu: "Запросите Ваше Предложение",
-        formTitleEn: "Request Your Quote",
-        formDescriptionLv: "Aizpildiet formu zemāk un mēs ar jums sazināsimies 24 stundu laikā ar personalizētu piedāvājumu.",
-        formDescriptionRu: "Заполните форму ниже, и мы свяжемся с вами в течение 24 часов с персонализированным предложением.",
-        formDescriptionEn: "Fill out the form below and we will get back to you within 24 hours with a personalized quote.",
-        ...contentData
+      const defaultContent: InsertContactContent = {
+        title: contentData.title || "Sazinieties ar mums",
+        description: contentData.description || "Saņemiet profesionālu konsultāciju un bezmaksas piedāvājumu",
+        formTitle: contentData.formTitle || "Pieprasīt piedāvājumu",
+        formDescription: contentData.formDescription || "Aizpildiet formu zemāk un mēs sazināsimies ar jums 24 stundu laikā",
+        translations: contentData.translations || {
+          lv: {
+            title: "Sazinieties ar mums",
+            description: "Saņemiet profesionālu konsultāciju un bezmaksas piedāvājumu",
+            formTitle: "Pieprasīt piedāvājumu",
+            formDescription: "Aizpildiet formu zemāk un mēs sazināsimies ar jums 24 stundu laikā"
+          },
+          ru: {
+            title: "Свяжитесь с нами",
+            description: "Получите профессиональную консультацию и бесплатное предложение",
+            formTitle: "Запросить предложение",
+            formDescription: "Заполните форму ниже, и мы свяжемся с вами в течение 24 часов"
+          },
+          en: {
+            title: "Contact Us",
+            description: "Get professional consultation and free quote",
+            formTitle: "Request Quote",
+            formDescription: "Fill out the form below and we will get back to you within 24 hours"
+          }
+        }
       };
       
       const [created] = await db
