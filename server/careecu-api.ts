@@ -11,6 +11,8 @@ interface CareEcuBrand {
   is_car?: number;
   is_truck?: number;
   is_tractor?: number;
+  logo?: string;
+  image?: string;
 }
 
 interface CareEcuModel {
@@ -88,6 +90,9 @@ export interface TuningData {
   stage1TorqueGain?: number;
   stage2PowerGain?: number;
   stage2TorqueGain?: number;
+  stage1FuelEconomy?: number;
+  stage2FuelEconomy?: number;
+  brandLogo?: string;
 }
 
 class CareEcuApiError extends Error {
@@ -558,6 +563,25 @@ export async function getTuningData(
     const stage2Power = stage2?.int_hp_new || undefined;
     const stage2Torque = stage2?.int_nm_new || undefined;
 
+    // Extract fuel economy data (int_eco) - only if not null
+    const stage1FuelEconomy = stage1?.int_eco !== null && stage1?.int_eco !== undefined ? stage1.int_eco : undefined;
+    const stage2FuelEconomy = stage2?.int_eco !== null && stage2?.int_eco !== undefined ? stage2.int_eco : undefined;
+
+    // Get brand logo - fetch brand data to get logo URL
+    let brandLogo: string | undefined;
+    try {
+      const brands = await cachedApiRequest<CareEcuBrand[]>(
+        `https://api.carecusoft.com/en/v1/chiptuning?key=${API_KEY}`,
+        getCacheKey("getBrands", [])
+      );
+      const brand = brands.find(
+        (b) => (b.name || b.var_title).toLowerCase() === brandName.toLowerCase()
+      );
+      brandLogo = brand?.logo || brand?.image;
+    } catch (error) {
+      console.log("Could not fetch brand logo:", error);
+    }
+
     // Calculate percentage gains
     const stage1PowerGain = originalPower > 0 ? Math.round(((stage1Power - originalPower) / originalPower) * 100) : 0;
     const stage1TorqueGain = originalTorque > 0 ? Math.round(((stage1Torque - originalTorque) / originalTorque) * 100) : 0;
@@ -576,6 +600,9 @@ export async function getTuningData(
       stage1TorqueGain,
       stage2PowerGain,
       stage2TorqueGain,
+      stage1FuelEconomy,
+      stage2FuelEconomy,
+      brandLogo,
     };
   } catch (error) {
     console.error(
