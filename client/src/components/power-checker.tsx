@@ -54,6 +54,17 @@ export default function PowerChecker() {
     enabled: !!selectedGeneration && !!selectedModel && !!selectedBrand,
   });
 
+  // Add loading states for other queries
+  const { isLoading: modelsLoading } = useQuery({
+    queryKey: [`/api/vehicles/models/car/${selectedBrand}`],
+    enabled: !!selectedBrand,
+  });
+
+  const { isLoading: generationsLoading } = useQuery({
+    queryKey: [`/api/vehicles/generations/car/${selectedBrand}/${selectedModel}`],
+    enabled: !!selectedModel && !!selectedBrand,
+  });
+
   // Ensure engines is always an array
   const engines = Array.isArray(enginesData) ? enginesData : [];
   
@@ -143,10 +154,17 @@ export default function PowerChecker() {
                 </label>
                 <Select value={selectedModel} onValueChange={handleModelChange} disabled={!selectedBrand}>
                   <SelectTrigger className={`bg-gray-700 border-gray-600 text-gray-100 ${!selectedBrand ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                    <SelectValue placeholder={selectedBrand ? t.powerChecker.selectModel : "Select brand first"} />
+                    <SelectValue placeholder={modelsLoading ? "Loading models..." : selectedBrand ? t.powerChecker.selectModel : "Select brand first"} />
                   </SelectTrigger>
                   <SelectContent className="bg-gray-700 border-gray-600">
-                    {(models as string[]).map((model: string) => (
+                    {modelsLoading ? (
+                      <SelectItem value="loading" disabled className="text-gray-400">
+                        <div className="flex items-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400 mr-2"></div>
+                          Loading models...
+                        </div>
+                      </SelectItem>
+                    ) : (models as string[]).map((model: string) => (
                       <SelectItem key={model} value={model} className="text-gray-100 hover:bg-gray-600">
                         {model}
                       </SelectItem>
@@ -162,10 +180,17 @@ export default function PowerChecker() {
                 </label>
                 <Select value={selectedGeneration} onValueChange={handleGenerationChange} disabled={!selectedModel}>
                   <SelectTrigger className={`bg-gray-700 border-gray-600 text-gray-100 ${!selectedModel ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                    <SelectValue placeholder={selectedModel ? "Select Generation" : "Select model first"} />
+                    <SelectValue placeholder={generationsLoading ? "Loading generations..." : selectedModel ? "Select Generation" : "Select model first"} />
                   </SelectTrigger>
                   <SelectContent className="bg-gray-700 border-gray-600">
-                    {(generations as string[]).map((generation: string) => (
+                    {generationsLoading ? (
+                      <SelectItem value="loading" disabled className="text-gray-400">
+                        <div className="flex items-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400 mr-2"></div>
+                          Loading generations...
+                        </div>
+                      </SelectItem>
+                    ) : (generations as string[]).map((generation: string) => (
                       <SelectItem key={generation} value={generation} className="text-gray-100 hover:bg-gray-600">
                         {generation}
                       </SelectItem>
@@ -186,7 +211,10 @@ export default function PowerChecker() {
                   <SelectContent className="bg-gray-700 border-gray-600">
                     {enginesLoading ? (
                       <SelectItem value="loading" disabled className="text-gray-400">
-                        Loading engines...
+                        <div className="flex items-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400 mr-2"></div>
+                          Loading engines...
+                        </div>
                       </SelectItem>
                     ) : engines.length > 0 ? (
                       engines.map((engine: string) => (
@@ -278,8 +306,8 @@ export default function PowerChecker() {
                       <div className="text-3xl font-bold text-white mb-1">{powerData.stage1Power}<span className="text-lg font-normal text-gray-300">HP</span></div>
                       <div className="text-2xl font-semibold text-gray-300 mb-3">{powerData.stage1Torque}<span className="text-lg font-normal text-gray-400">NM</span></div>
                       <div className="flex justify-center space-x-6 text-sm">
-                        <span className="text-red-400 font-bold">+{powerData.stage1Power - powerData.originalPower} HP (+{powerData.stage1PowerGain}%)</span>
-                        <span className="text-red-400 font-bold">+{powerData.stage1Torque - powerData.originalTorque} NM (+{powerData.stage1TorqueGain}%)</span>
+                        <span className="text-red-400 font-bold">+{powerData.stage1Power - powerData.originalPower} HP</span>
+                        <span className="text-red-400 font-bold">+{powerData.stage1Torque - powerData.originalTorque} NM</span>
                       </div>
                     </div>
 
@@ -297,8 +325,8 @@ export default function PowerChecker() {
                         <div className="text-3xl font-bold text-white mb-1">{powerData.stage2Power}<span className="text-lg font-normal text-gray-300">HP</span></div>
                         <div className="text-2xl font-semibold text-gray-300 mb-3">{powerData.stage2Torque}<span className="text-lg font-normal text-gray-400">NM</span></div>
                         <div className="flex justify-center space-x-6 text-sm">
-                          <span className="text-red-400 font-bold">+{powerData.stage2Power - powerData.originalPower} HP (+{powerData.stage2PowerGain}%)</span>
-                          <span className="text-red-400 font-bold">+{powerData.stage2Torque - powerData.originalTorque} NM (+{powerData.stage2TorqueGain}%)</span>
+                          <span className="text-red-400 font-bold">+{powerData.stage2Power - powerData.originalPower} HP</span>
+                          <span className="text-red-400 font-bold">+{powerData.stage2Torque - powerData.originalTorque} NM</span>
                         </div>
                       </div>
                     )}
