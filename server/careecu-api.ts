@@ -110,8 +110,8 @@ class CareEcuApiError extends Error {
 // Simple in-memory cache object
 const cache = new Map<string, any>();
 
-// Cache TTL (time to live) in milliseconds (e.g., 10 minutes)
-const CACHE_TTL = 10 * 60 * 1000;
+// Cache TTL (time to live) in milliseconds (30 days)
+const CACHE_TTL = 30 * 24 * 60 * 60 * 1000;
 
 function getCacheKey(functionName: string, params: any[]): string {
   return `${functionName}:${JSON.stringify(params)}`;
