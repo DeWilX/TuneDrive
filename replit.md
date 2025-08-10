@@ -23,6 +23,7 @@ The website is fully GDPR compliant with comprehensive privacy features includin
 - **Complete Power Checker Integration**: Full vehicle hierarchy (brands → models → generations/years → engines/stages → power data) working seamlessly
 - **Professional Error Handling**: Comprehensive logging and error recovery ensures uninterrupted user experience
 - **Database Migration Completed**: Successfully migrated from Replit Agent to full Replit environment with PostgreSQL integration
+- **CareEcu API Engine Fix**: Resolved engine specification display issue where tuning stages (ECO, STAGE 1) were showing instead of actual engine specs ("3.0 V6 TDi"). Now extracts proper engine specifications from CareEcu API parent data structure.
 
 ## Recent Enhancements (January 2025)
 
