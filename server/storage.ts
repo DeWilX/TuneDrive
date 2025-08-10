@@ -13,6 +13,10 @@ import {
   type InsertServiceItem,
   type ContactInfo,
   type InsertContactInfo,
+  type GlobalContactInfo,
+  type InsertGlobalContactInfo,
+  type ContactPageContent,
+  type InsertContactPageContent,
   type PowerCalculatorData,
   type InsertPowerCalculatorData,
   type Translation,
@@ -40,6 +44,8 @@ import {
   navigationItems,
   serviceItems,
   contactInfo,
+  globalContactInfo,
+  contactPageContent,
   powerCalculatorData,
   translations,
   languages,
@@ -145,6 +151,14 @@ export interface IStorage {
   // Why Choose Us content operations
   getWhyChooseUsContent(): Promise<WhyChooseUsContent | undefined>;
   upsertWhyChooseUsContent(content: InsertWhyChooseUsContent): Promise<WhyChooseUsContent>;
+  
+  // Global contact info operations (centralized contact management)
+  getGlobalContactInfo(): Promise<GlobalContactInfo | undefined>;
+  upsertGlobalContactInfo(info: Partial<InsertGlobalContactInfo>): Promise<GlobalContactInfo>;
+  
+  // Contact page content operations
+  getContactPageContent(): Promise<ContactPageContent | undefined>;
+  upsertContactPageContent(content: Partial<InsertContactPageContent>): Promise<ContactPageContent>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -785,6 +799,78 @@ export class DatabaseStorage implements IStorage {
       const [created] = await db
         .insert(whyChooseUsContent)
         .values(contentData)
+        .returning();
+      return created;
+    }
+  }
+
+  // Global contact info operations (centralized contact management)
+  async getGlobalContactInfo(): Promise<GlobalContactInfo | undefined> {
+    const [result] = await db.select().from(globalContactInfo).where(eq(globalContactInfo.isActive, true)).limit(1);
+    return result || undefined;
+  }
+
+  async upsertGlobalContactInfo(infoData: Partial<InsertGlobalContactInfo>): Promise<GlobalContactInfo> {
+    const existing = await this.getGlobalContactInfo();
+    
+    if (existing) {
+      // Update existing
+      const [updated] = await db
+        .update(globalContactInfo)
+        .set({ ...infoData, updatedAt: new Date() })
+        .where(eq(globalContactInfo.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      // Create new with defaults if not provided
+      const defaultContactInfo: InsertGlobalContactInfo = {
+        phone: infoData.phone || '+371 123 456 789',
+        whatsapp: infoData.whatsapp || '+371 123 456 789',
+        email: infoData.email || 'info@chiptuningpro.lv',
+        location: infoData.location || 'Riga, Latvia',
+        workingHours: infoData.workingHours || 'Mon-Fri: 9:00-18:00',
+        quotesEmail: infoData.quotesEmail || 'quotes@chiptuningpro.lv',
+        ...infoData
+      };
+      
+      const [created] = await db
+        .insert(globalContactInfo)
+        .values(defaultContactInfo)
+        .returning();
+      return created;
+    }
+  }
+
+  // Contact page content operations
+  async getContactPageContent(): Promise<ContactPageContent | undefined> {
+    const [result] = await db.select().from(contactPageContent).where(eq(contactPageContent.isActive, true)).limit(1);
+    return result || undefined;
+  }
+
+  async upsertContactPageContent(contentData: Partial<InsertContactPageContent>): Promise<ContactPageContent> {
+    const existing = await this.getContactPageContent();
+    
+    if (existing) {
+      // Update existing
+      const [updated] = await db
+        .update(contactPageContent)
+        .set({ ...contentData, updatedAt: new Date() })
+        .where(eq(contactPageContent.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      // Create new with defaults if not provided
+      const defaultContent: InsertContactPageContent = {
+        heroTitle: contentData.heroTitle || 'Get Your Custom ECU Tune',
+        heroDescription: contentData.heroDescription || 'Ready to unlock your engine potential? Contact our experts for a personalized quote.',
+        formTitle: contentData.formTitle || 'Request Your Quote',
+        formDescription: contentData.formDescription || 'Fill out the form below and we will get back to you within 24 hours with a customized quote.',
+        ...contentData
+      };
+      
+      const [created] = await db
+        .insert(contactPageContent)
+        .values(defaultContent)
         .returning();
       return created;
     }

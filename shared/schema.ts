@@ -76,6 +76,32 @@ export const serviceItems = pgTable("service_items", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Global Contact Information - Single source of truth for all contact details
+export const globalContactInfo = pgTable("global_contact_info", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  phone: text("phone").notNull(),
+  whatsapp: text("whatsapp").notNull(),
+  email: text("email").notNull(),
+  location: text("location").notNull(),
+  workingHours: text("working_hours").notNull(),
+  quotesEmail: text("quotes_email").notNull(), // Email where quote requests are sent
+  isActive: boolean("is_active").default(true),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Contact Page Content Management
+export const contactPageContent = pgTable("contact_page_content", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  heroTitle: text("hero_title").notNull(),
+  heroDescription: text("hero_description").notNull(),
+  formTitle: text("form_title").notNull(),
+  formDescription: text("form_description").notNull(),
+  translations: jsonb("translations"), // Object with language codes as keys for all fields
+  isActive: boolean("is_active").default(true),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Keep old contactInfo for backward compatibility
 export const contactInfo = pgTable("contact_info", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   type: text("type").notNull(), // 'phone', 'email', 'whatsapp', 'address'
@@ -168,6 +194,16 @@ export const insertServiceItemSchema = createInsertSchema(serviceItems).omit({
   updatedAt: true,
 });
 
+export const insertGlobalContactInfoSchema = createInsertSchema(globalContactInfo).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export const insertContactPageContentSchema = createInsertSchema(contactPageContent).omit({
+  id: true,
+  updatedAt: true,
+});
+
 export const insertContactInfoSchema = createInsertSchema(contactInfo).omit({
   id: true,
   updatedAt: true,
@@ -218,14 +254,16 @@ export type InsertNavigationItem = z.infer<typeof insertNavigationItemSchema>;
 export type NavigationItem = typeof navigationItems.$inferSelect;
 export type InsertServiceItem = z.infer<typeof insertServiceItemSchema>;
 export type ServiceItem = typeof serviceItems.$inferSelect;
+export type InsertGlobalContactInfo = z.infer<typeof insertGlobalContactInfoSchema>;
+export type GlobalContactInfo = typeof globalContactInfo.$inferSelect;
+export type InsertContactPageContent = z.infer<typeof insertContactPageContentSchema>;
+export type ContactPageContent = typeof contactPageContent.$inferSelect;
 export type InsertContactInfo = z.infer<typeof insertContactInfoSchema>;
 export type ContactInfo = typeof contactInfo.$inferSelect;
 export type ZboxContent = typeof zboxContent.$inferSelect;
 export type InsertZboxContent = z.infer<typeof insertZboxContentSchema>;
 export type WhyChooseUsContent = typeof whyChooseUsContent.$inferSelect;
 export type InsertWhyChooseUsContent = z.infer<typeof insertWhyChooseUsContentSchema>;
-export type InsertZboxContent = z.infer<typeof insertZboxContentSchema>;
-export type ZboxContent = typeof zboxContent.$inferSelect;
 
 // Translations table for multilingual support
 export const translations = pgTable("translations", {

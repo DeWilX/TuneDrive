@@ -21,6 +21,7 @@ import AnalyticsDashboard from "@/components/admin/analytics-dashboard";
 import HelpPanel from "@/components/admin/help-panel";
 import ZboxManagement from "@/components/admin/zbox-management";
 import WhyChooseUsManagement from "@/components/admin/why-choose-us-management";
+import { ContactManagement } from "@/components/admin/contact-management";
 
 export default function AdminDashboard() {
   const { user, logout, isAuthenticated, token } = useAdmin();
@@ -383,10 +384,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="contact" className="space-y-6">
             <div className="mb-6">
-              <h2 className="text-2xl font-bold text-white mb-2">Contact Information</h2>
-              <p className="text-gray-400">Manage your contact details and business information displayed on your website.</p>
+              <h2 className="text-2xl font-bold text-white mb-2">Contact Management</h2>
+              <p className="text-gray-400">Manage centralized contact information and contact page content displayed across your website.</p>
             </div>
-            <ContactManager token={token || ''} />
+            <ContactManagement />
           </TabsContent>
 
           <TabsContent value="services" className="space-y-6">

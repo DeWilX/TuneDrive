@@ -7,6 +7,8 @@ import {
   insertNavigationItemSchema,
   insertServiceItemSchema,
   insertContactInfoSchema,
+  insertGlobalContactInfoSchema,
+  insertContactPageContentSchema,
   insertVehicleSchema,
   insertPowerCalculatorDataSchema,
   insertTranslationSchema,
@@ -187,18 +189,25 @@ app.get("/api/vehicles/variants/:vehicleType/:brand/:model/:generation/:engine",
     }
   });
 
-  // Contact form route
+  // Contact form route with centralized email configuration
   app.post("/api/contact", async (req, res) => {
     try {
       const validatedData = insertContactRequestSchema.parse(req.body);
+      
+      // Get the quotes email from global contact info for centralized configuration
+      const globalInfo = await storage.getGlobalContactInfo();
+      const quotesEmail = globalInfo?.quotesEmail || 'quotes@chiptuningpro.lv';
+      
+      // Store the contact request
       const contactRequest = await storage.createContactRequest(validatedData);
       
-      // Here you could add email sending functionality
-      // await sendEmail(contactRequest);
+      // Here you could add email sending functionality using the quotesEmail
+      // await sendEmail(contactRequest, quotesEmail);
       
       res.status(201).json({ 
         message: "Contact request submitted successfully",
-        id: contactRequest.id 
+        id: contactRequest.id,
+        quotesDestination: quotesEmail
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -626,6 +635,80 @@ app.get("/api/vehicles/variants/:vehicleType/:brand/:model/:generation/:engine",
       res.json({ message: "Contact info deleted" });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete contact info" });
+    }
+  });
+
+  // Global Contact Info Management Routes
+  app.get("/api/admin/global-contact-info", requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const contactInfo = await storage.getGlobalContactInfo();
+      res.json(contactInfo);
+    } catch (error) {
+      console.error("Error fetching global contact info:", error);
+      res.status(500).json({ message: "Failed to fetch global contact info" });
+    }
+  });
+
+  app.put("/api/admin/global-contact-info", requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const validatedData = insertGlobalContactInfoSchema.parse(req.body);
+      const info = await storage.upsertGlobalContactInfo(validatedData);
+      res.json(info);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      console.error("Error updating global contact info:", error);
+      res.status(500).json({ message: "Failed to update global contact info" });
+    }
+  });
+
+  // Contact Page Content Management Routes
+  app.get("/api/admin/contact-page-content", requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const content = await storage.getContactPageContent();
+      res.json(content);
+    } catch (error) {
+      console.error("Error fetching contact page content:", error);
+      res.status(500).json({ message: "Failed to fetch contact page content" });
+    }
+  });
+
+
+
+  app.put("/api/admin/contact-page-content", requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const validatedData = insertContactPageContentSchema.parse(req.body);
+      const content = await storage.upsertContactPageContent(validatedData);
+      res.json(content);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      console.error("Error updating contact page content:", error);
+      res.status(500).json({ message: "Failed to update contact page content" });
+    }
+  });
+
+  // Public route to get global contact info for site-wide display
+  app.get("/api/global-contact-info", async (req, res) => {
+    try {
+      const contactInfo = await storage.getGlobalContactInfo();
+      res.json(contactInfo);
+    } catch (error) {
+      console.error("Error fetching global contact info:", error);
+      res.status(500).json({ message: "Failed to fetch global contact info" });
+    }
+  });
+
+  // Public route to get contact page content
+  app.get("/api/contact-page-content", async (req, res) => {
+    try {
+      const content = await storage.getContactPageContent();
+      res.json(content);
+    } catch (error) {
+      console.error("Error fetching contact page content:", error);
+      res.status(500).json({ message: "Failed to fetch contact page content" });
     }
   });
 
