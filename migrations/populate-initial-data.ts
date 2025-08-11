@@ -1,26 +1,92 @@
+// populate-postgres.js - PostgreSQL Data Populator for TuneDrive
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import ws from "ws";
-import * as schema from "../shared/schema";
+import * as schema from "../shared/schema.js";
 import bcrypt from "bcrypt";
+import dotenv from "dotenv";
 
+// Configure Neon for serverless
 neonConfig.webSocketConstructor = ws;
 
+// Load environment variables
+dotenv.config();
+
+// Validate environment variables
 if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL must be set. Did you forget to provision a database?");
+  throw new Error("❌ DATABASE_URL must be set. Did you forget to provision a database?");
 }
 
+console.log("🔌 Connecting to PostgreSQL database...");
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const db = drizzle({ client: pool, schema });
 
-async function populateInitialData() {
-  console.log("Starting database population with initial data...");
+async function testConnection() {
+  try {
+    console.log("🧪 Testing database connection...");
+    const result = await pool.query('SELECT NOW() as current_time, version() as postgres_version');
+    console.log("✅ Database connection successful!");
+    console.log(`📅 Server time: ${result.rows[0].current_time}`);
+    console.log(`🐘 PostgreSQL version: ${result.rows[0].postgres_version.split(' ')[0]}`);
+    return true;
+  } catch (error) {
+    console.error("❌ Database connection failed:", error.message);
+    return false;
+  }
+}
+
+async function clearExistingData() {
+  console.log("🧹 Clearing existing data (if any)...");
+  try {
+    // Clear data in reverse order due to foreign key constraints
+    const tables = [
+      'vehicles',
+      'power_calculator_data', 
+      'page_content',
+      'contact_page_content',
+      'global_contact_info',
+      'why_choose_us_content',
+      'zbox_content',
+      'service_items',
+      'navigation_items',
+      'site_identity',
+      'admin_users'
+    ];
+
+    for (const table of tables) {
+      try {
+        await pool.query(`DELETE FROM ${table}`);
+        console.log(`  ✅ Cleared ${table}`);
+      } catch (error) {
+        console.log(`  ⚠️  Table ${table} might not exist or is empty: ${error.message}`);
+      }
+    }
+  } catch (error) {
+    console.log("⚠️  Some tables couldn't be cleared (this is normal for new databases)");
+  }
+}
+
+async function populatePostgresData() {
+  console.log("🌱 Starting PostgreSQL database population...");
+  console.log("=" .repeat(50));
 
   try {
+    // Test connection first
+    const connected = await testConnection();
+    if (!connected) {
+      throw new Error("Cannot proceed without database connection");
+    }
+
+    // Option to clear existing data
+    const shouldClear = process.argv.includes('--clear');
+    if (shouldClear) {
+      await clearExistingData();
+    }
+
     // 1. Site Identity
-    console.log("Populating site identity...");
+    console.log("🏢 Populating site identity...");
     await db.insert(schema.siteIdentity).values({
-      companyName: "ChipTuning PRO",
+      companyName: "TuneDrive PRO",
       tagline: "Professional ECU Tuning & Performance Enhancement",
       heroTitle: "Unlock Your Vehicle's True Potential",
       heroSubtitle: "Professional ECU tuning services for cars, trucks, and agricultural vehicles",
@@ -33,9 +99,10 @@ async function populateInitialData() {
       projectCount: 1200,
       experienceYears: 15,
     }).onConflictDoNothing();
+    console.log("  ✅ Site identity created");
 
     // 2. Navigation Items
-    console.log("Populating navigation items...");
+    console.log("🧭 Populating navigation items...");
     const navigationData = [
       {
         label: "Home",
@@ -80,15 +147,27 @@ async function populateInitialData() {
         },
         icon: "fa-info-circle",
         order: 4
+      },
+      {
+        label: "Contact",
+        href: "#contact",
+        translations: {
+          en: "Contact",
+          lv: "Kontakti",
+          ru: "Контакты"
+        },
+        icon: "fa-envelope",
+        order: 5
       }
     ];
 
     for (const nav of navigationData) {
       await db.insert(schema.navigationItems).values(nav).onConflictDoNothing();
     }
+    console.log(`  ✅ Inserted ${navigationData.length} navigation items`);
 
     // 3. Service Items
-    console.log("Populating service items...");
+    console.log("🔧 Populating service items...");
     const serviceData = [
       {
         title: "Stage 1 Chiptuning",
@@ -173,177 +252,56 @@ async function populateInitialData() {
         features: ["Improved engine longevity", "Better performance", "Reduced maintenance costs", "Professional coding"],
         price: "From €249",
         order: 3
+      },
+      {
+        title: "ZBOX Professional Device",
+        description: "Advanced plug-and-play tuning solution",
+        translations: {
+          en: {
+            title: "ZBOX Professional Device",
+            description: "Advanced plug-and-play tuning solution",
+            features: ["Plug & Play installation", "Instant power increase", "Reversible tuning", "Multiple maps"],
+            price: "From €899"
+          },
+          lv: {
+            title: "ZBOX Profesionāla Ierīce",
+            description: "Uzlabots plug-and-play regulēšanas risinājums",
+            features: ["Plug & Play uzstādīšana", "Tūlītējs jaudas pieaugums", "Atgriezeniska regulēšana", "Vairākas kartes"],
+            price: "No €899"
+          },
+          ru: {
+            title: "ZBOX Профессиональное Устройство",
+            description: "Продвинутое plug-and-play решение",
+            features: ["Plug & Play установка", "Мгновенное увеличение мощности", "Обратимый тюнинг", "Множественные карты"],
+            price: "От €899"
+          }
+        },
+        icon: "fa-cube",
+        features: ["Plug & Play installation", "Instant power increase", "Reversible tuning", "Multiple maps"],
+        price: "From €899",
+        order: 4
       }
     ];
 
     for (const service of serviceData) {
       await db.insert(schema.serviceItems).values(service).onConflictDoNothing();
     }
+    console.log(`  ✅ Inserted ${serviceData.length} service items`);
 
-    // 4. ZBOX Content
-    console.log("Populating ZBOX content...");
-    await db.insert(schema.zboxContent).values({
-      title: "ZBOX Professional Tuning Device",
-      description: "Advanced plug-and-play tuning solution for instant performance gains",
-      translations: {
-        en: {
-          title: "ZBOX Professional Tuning Device",
-          description: "Advanced plug-and-play tuning solution for instant performance gains",
-          features: ["Plug & Play installation", "Instant power increase", "Reversible tuning", "Multiple tuning maps", "Professional support"],
-          price: "€899",
-          priceNote: "Installation included",
-          buttonText: "Learn More About ZBOX"
-        },
-        lv: {
-          title: "ZBOX Profesionāla Regulēšanas Ierīce",
-          description: "Uzlabots plug-and-play regulēšanas risinājums tūlītējiem veiktspējas uzlabojumiem",
-          features: ["Plug & Play uzstādīšana", "Tūlītējs jaudas pieaugums", "Atgriezeniska regulēšana", "Vairākas regulēšanas kartes", "Profesionāls atbalsts"],
-          price: "€899",
-          priceNote: "Uzstādīšana iekļauta",
-          buttonText: "Uzzināt Vairāk Par ZBOX"
-        },
-        ru: {
-          title: "ZBOX Профессиональное Устройство Тюнинга",
-          description: "Продвинутое plug-and-play решение для мгновенного увеличения производительности",
-          features: ["Plug & Play установка", "Мгновенное увеличение мощности", "Обратимый тюнинг", "Множественные карты настройки", "Профессиональная поддержка"],
-          price: "€899",
-          priceNote: "Установка включена",
-          buttonText: "Узнать Больше о ZBOX"
-        }
-      },
-      features: ["Plug & Play installation", "Instant power increase", "Reversible tuning", "Multiple tuning maps", "Professional support"],
-      price: "€899",
-      priceNote: "Installation included",
-      buttonText: "Learn More About ZBOX"
-    }).onConflictDoNothing();
-
-    // 5. Why Choose Us Content
-    console.log("Populating why choose us content...");
-    await db.insert(schema.whyChooseUsContent).values({
-      title: "Why Choose ChipTuning PRO?",
-      description: "Over 15 years of experience in professional automotive tuning with thousands of satisfied customers worldwide",
-      translations: {
-        en: {
-          title: "Why Choose ChipTuning PRO?",
-          features: [
-            { icon: "fa-fire", title: "15+ Years Experience", description: "Proven expertise in automotive chiptuning" },
-            { icon: "fa-tachometer-alt", title: "Latest Equipment", description: "State-of-the-art tuning tools and diagnostics" },
-            { icon: "fa-user-cog", title: "Expert Technicians", description: "Certified professionals with extensive training" },
-            { icon: "fa-shield-alt", title: "Comprehensive Warranty", description: "Full warranty coverage for peace of mind" }
-          ],
-          description: "Over 15 years of experience in professional automotive tuning with thousands of satisfied customers worldwide",
-          workshopTitle: "Professional Workshop & Equipment",
-          workshopFeatures: ["Professional dyno testing", "Latest diagnostic equipment", "Specialized tuning software", "Climate-controlled facility", "Certified technicians"],
-          workshopDescription: "Our state-of-the-art facility is equipped with the latest diagnostic tools, professional dynamometer, and specialized software for precise tuning results. We maintain the highest standards in automotive performance enhancement."
-        },
-        lv: {
-          title: "Kāpēc izvēlēties ChipTuning PRO?",
-          features: [
-            { icon: "fa-fire", title: "15+ Gadu pieredze", description: "Pierādīta ekspertīze auto čipošanā" },
-            { icon: "fa-tachometer-alt", title: "Labākās iekārtas", description: "Labakie tooli" },
-            { icon: "fa-user-cog", title: "Labakie Tehniķi", description: "Litrabola trenēti" },
-            { icon: "fa-shield-alt", title: "Garantija galīgi nenosedz šito", description: "Bet nu mēs par savu darbu gan dodam garantiju\n" }
-          ],
-          description: "Vairāk nekā 15 gadu pieredze profesionālā automobiļu tuninga jomā ar tūkstošiem apmierinātu klientu visā pasaulē",
-          workshopTitle: "Profesionāla darbnīca un aprīkojums",
-          workshopFeatures: ["Profesionāla dinamometra pārbaude", "Jaunākās diagnostikas iekārtas", "Specializēta regulēšanas programmatūra", "Darbnīca ar klimata kontroli", "Sertificēti tehniķi"],
-          workshopDescription: "Mūsu mūsdienīgais uzņēmums ir aprīkots ar jaunākajiem diagnostikas rīkiem, profesionālu dinamometru un specializētu programmatūru precīziem regulēšanas rezultātiem. Mēs uzturām augstākos standartus automobiļu veiktspējas uzlabošanā."
-        },
-        ru: {
-          title: "Почему выбирают ChipTuning PRO?",
-          features: [
-            { icon: "fa-fire", title: "15+ лет опыта", description: "Проверенная экспертиза в автомобильном чип-тюнинге" },
-            { icon: "fa-tachometer-alt", title: "Новейшее оборудование", description: "Современные инструменты настройки и диагностики" },
-            { icon: "fa-user-cog", title: "Экспертные технические специалисты", description: "Сертифицированные профессионалы с обширной подготовкой" },
-            { icon: "fa-shield-alt", title: "Комплексная гарантия", description: "Полное гарантийное покрытие для спокойствия" }
-          ],
-          description: "Более 15 лет опыта в профессиональном автомобильном тюнинге с тысячами довольных клиентов по всему миру",
-          workshopTitle: "Профессиональная мастерская и оборудование",
-          workshopFeatures: ["Профессиональное тестирование на динамометре", "Новейшее диагностическое оборудование", "Специализированное программное обеспечение для настройки", "Помещение с климат-контролем", "Сертифицированные технические специалисты"],
-          workshopDescription: "Наш современный объект оборудован новейшими диагностическими инструментами, профессиональным динамометром и специализированным программным обеспечением для точных результатов настройки. Мы поддерживаем самые высокие стандарты в улучшении автомобильной производительности."
-        }
-      },
-      features: [
-        { icon: "fa-fire", title: "15+ Years Experience", description: "Proven expertise in automotive chiptuning" },
-        { icon: "fa-tachometer-alt", title: "Latest Equipment", description: "State-of-the-art tuning tools and diagnostics" },
-        { icon: "fa-user-cog", title: "Expert Technicians", description: "Certified professionals with extensive training" },
-        { icon: "fa-shield-alt", title: "Comprehensive Warranty", description: "Full warranty coverage for peace of mind" }
-      ],
-      workshopTitle: "Professional Workshop & Equipment",
-      workshopDescription: "Our state-of-the-art facility is equipped with the latest diagnostic tools, professional dynamometer, and specialized software for precise tuning results. We maintain the highest standards in automotive performance enhancement.",
-      workshopFeatures: ["Professional dyno testing", "Latest diagnostic equipment", "Specialized tuning software", "Climate-controlled facility", "Certified technicians"]
-    }).onConflictDoNothing();
-
-    // 6. Global Contact Information
-    console.log("Populating global contact information...");
+    // 4. Global Contact Information
+    console.log("📞 Populating global contact information...");
     await db.insert(schema.globalContactInfo).values({
       phone: "+371 12345678",
       whatsapp: "+371 12345678",
-      email: "info@chiptuningpro.lv",
+      email: "info@tunedrive.pro",
       location: "Riga, Latvia",
       workingHours: "Monday - Friday: 9:00 - 18:00",
-      quotesEmail: "quotes@chiptuningpro.lv"
+      quotesEmail: "quotes@tunedrive.pro"
     }).onConflictDoNothing();
+    console.log("  ✅ Contact information created");
 
-    // 7. Contact Page Content
-    console.log("Populating contact page content...");
-    await db.insert(schema.contactPageContent).values({
-      heroTitle: "Get Your Free Quote Today",
-      heroDescription: "Contact our experts for professional ECU tuning consultation and personalized service recommendations",
-      formTitle: "Request Your Quote",
-      formDescription: "Fill out the form below and our team will get back to you within 24 hours with a personalized quote",
-      translations: {
-        en: {
-          heroTitle: "Get Your Free Quote Today",
-          heroDescription: "Contact our experts for professional ECU tuning consultation and personalized service recommendations",
-          formTitle: "Request Your Quote",
-          formDescription: "Fill out the form below and our team will get back to you within 24 hours with a personalized quote"
-        },
-        lv: {
-          heroTitle: "Saņemiet Bezmaksas Piedāvājumu Šodien",
-          heroDescription: "Sazinieties ar mūsu ekspertiem profesionālai ECU regulēšanas konsultācijai un personalizētiem pakalpojumu ieteikumiem",
-          formTitle: "Pieprasīt Piedāvājumu",
-          formDescription: "Aizpildiet zemāk esošo formu un mūsu komanda sazināsies ar jums 24 stundu laikā ar personalizētu piedāvājumu"
-        },
-        ru: {
-          heroTitle: "Получите Бесплатное Предложение Сегодня",
-          heroDescription: "Свяжитесь с нашими экспертами для профессиональной консультации по настройке ЭБУ и персонализированных рекомендаций по услугам",
-          formTitle: "Запросить Предложение",
-          formDescription: "Заполните форму ниже, и наша команда свяжется с вами в течение 24 часов с персонализированным предложением"
-        }
-      }
-    }).onConflictDoNothing();
-
-    // 8. Page Content (Hero Section)
-    console.log("Populating page content...");
-    await db.insert(schema.pageContent).values({
-      pageName: "home",
-      title: "Unlock Your Vehicle's True Potential",
-      subtitle: "Professional ECU Tuning & Performance Enhancement",
-      content: {
-        heroDescription: "Experience the ultimate in automotive performance with our professional ECU tuning services. From Stage 1 chiptuning to advanced hardware modifications, we unlock your vehicle's hidden potential while maintaining reliability and fuel efficiency.",
-        callToAction: "Check Your Vehicle Power",
-        features: [
-          "Professional ECU Remapping",
-          "Stage 1 & 2 Chiptuning",
-          "EGR/DPF Removal",
-          "ZBOX Tuning Device"
-        ]
-      }
-    }).onConflictDoNothing();
-
-    // 9. Power Calculator Data
-    console.log("Populating power calculator data...");
-    await db.insert(schema.powerCalculatorData).values({
-      title: "Vehicle Power Checker",
-      subtitle: "Check your vehicle's tuning potential",
-      description: "Select your vehicle to see potential power gains from our professional tuning services",
-      features: ["Real-time power calculations", "Stage 1 & 2 comparisons", "Comprehensive vehicle database", "Professional recommendations"],
-      buttonText: "Check Vehicle Power"
-    }).onConflictDoNothing();
-
-    // 10. Sample Vehicles (Popular models)
-    console.log("Populating sample vehicle data...");
+    // 5. Sample Vehicle Data for Power Checker
+    console.log("🚗 Populating sample vehicle data...");
     const vehicleData = [
       {
         brand: "Audi",
@@ -363,7 +321,7 @@ async function populateInitialData() {
         brand: "BMW",
         model: "3 Series",
         generation: "F30 (2012-2019)",
-        engine: "2.0 TDI",
+        engine: "320d",
         variant: "184 HP",
         vehicleType: "car",
         originalPower: 184,
@@ -391,7 +349,7 @@ async function populateInitialData() {
         brand: "Mercedes-Benz",
         model: "C-Class",
         generation: "W205 (2014-2021)",
-        engine: "2.2 CDI",
+        engine: "220d",
         variant: "170 HP",
         vehicleType: "car",
         originalPower: 170,
@@ -414,45 +372,143 @@ async function populateInitialData() {
         stage1Torque: 390,
         stage2Power: 210,
         stage2Torque: 430
+      },
+      {
+        brand: "Toyota",
+        model: "Hilux",
+        generation: "AN120 (2015-2023)",
+        engine: "2.4 D-4D",
+        variant: "150 HP",
+        vehicleType: "truck",
+        originalPower: 150,
+        originalTorque: 400,
+        stage1Power: 180,
+        stage1Torque: 480,
+        stage2Power: 200,
+        stage2Torque: 520
+      },
+      {
+        brand: "John Deere",
+        model: "6M Series",
+        generation: "2013-2020",
+        engine: "6.8L",
+        variant: "140 HP",
+        vehicleType: "agricultural",
+        originalPower: 140,
+        originalTorque: 650,
+        stage1Power: 165,
+        stage1Torque: 750,
+        stage2Power: 185,
+        stage2Torque: 850
       }
     ];
 
     for (const vehicle of vehicleData) {
       await db.insert(schema.vehicles).values(vehicle).onConflictDoNothing();
     }
+    console.log(`  ✅ Inserted ${vehicleData.length} sample vehicles`);
 
-    // 11. Create Default Admin User (password: admin123)
-    console.log("Creating default admin user...");
+    // 6. Power Calculator Configuration
+    console.log("⚡ Populating power calculator data...");
+    await db.insert(schema.powerCalculatorData).values({
+      title: "Vehicle Power Checker",
+      subtitle: "Check your vehicle's tuning potential",
+      description: "Select your vehicle to see potential power gains from our professional tuning services",
+      features: ["Real-time power calculations", "Stage 1 & 2 comparisons", "Comprehensive vehicle database", "Professional recommendations"],
+      buttonText: "Check Vehicle Power"
+    }).onConflictDoNothing();
+    console.log("  ✅ Power calculator configured");
+
+    // 7. Create Default Admin User
+    console.log("👤 Creating default admin user...");
     const hashedPassword = await bcrypt.hash("admin123", 10);
     await db.insert(schema.adminUsers).values({
       username: "admin",
       password: hashedPassword,
       isActive: true
     }).onConflictDoNothing();
+    console.log("  ✅ Admin user created");
 
-    console.log("✅ Database population completed successfully!");
-    console.log("📝 Default admin credentials: username=admin, password=admin123");
-    console.log("🔧 Please change the default admin password after first login");
-    
+    // 8. Verify data insertion
+    console.log("🔍 Verifying data insertion...");
+    const counts = await Promise.all([
+      pool.query('SELECT COUNT(*) FROM site_identity'),
+      pool.query('SELECT COUNT(*) FROM navigation_items'),
+      pool.query('SELECT COUNT(*) FROM service_items'),
+      pool.query('SELECT COUNT(*) FROM vehicles'),
+      pool.query('SELECT COUNT(*) FROM admin_users')
+    ]);
+
+    console.log("📊 Database population summary:");
+    console.log(`  • Site Identity: ${counts[0].rows[0].count} records`);
+    console.log(`  • Navigation Items: ${counts[1].rows[0].count} records`);
+    console.log(`  • Service Items: ${counts[2].rows[0].count} records`);
+    console.log(`  • Sample Vehicles: ${counts[3].rows[0].count} records`);
+    console.log(`  • Admin Users: ${counts[4].rows[0].count} records`);
+
+    console.log("\n" + "=" .repeat(50));
+    console.log("🎉 PostgreSQL database population completed successfully!");
+    console.log("\n📝 Admin Login Credentials:");
+    console.log("   Username: admin");
+    console.log("   Password: admin123");
+    console.log("\n🚀 Next Steps:");
+    console.log("1. Run: npm run dev");
+    console.log("2. Visit: http://localhost:5000");
+    console.log("3. Admin panel: http://localhost:5000/admin/login");
+    console.log("4. ⚠️  Change admin password after first login!");
+
   } catch (error) {
-    console.error("❌ Error populating database:", error);
+    console.error("\n💥 Database population failed:", error);
+    
+    // Provide helpful error context
+    if (error.message.includes('relation') && error.message.includes('does not exist')) {
+      console.log("\n🔧 Solution: Run database schema push first:");
+      console.log("   npm run db:push");
+    }
+    
+    if (error.message.includes('connect')) {
+      console.log("\n🔧 Solution: Check your DATABASE_URL in .env file");
+    }
+    
     throw error;
   } finally {
     await pool.end();
+    console.log("🔌 Database connection closed");
   }
 }
 
-// Run the migration if this file is executed directly
+// Run with command line options
+const runPopulation = async () => {
+  const args = process.argv.slice(2);
+  
+  if (args.includes('--help') || args.includes('-h')) {
+    console.log("🚗 TuneDrive PostgreSQL Data Populator");
+    console.log("=====================================");
+    console.log("\nUsage:");
+    console.log("  node populate-postgres.js [options]");
+    console.log("\nOptions:");
+    console.log("  --clear    Clear existing data before populating");
+    console.log("  --help     Show this help message");
+    console.log("\nExamples:");
+    console.log("  node populate-postgres.js");
+    console.log("  node populate-postgres.js --clear");
+    return;
+  }
+
+  await populatePostgresData();
+};
+
+// Execute if run directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-  populateInitialData()
+  runPopulation()
     .then(() => {
-      console.log("Migration completed successfully");
+      console.log("✨ Migration completed successfully");
       process.exit(0);
     })
     .catch((error) => {
-      console.error("Migration failed:", error);
+      console.error("❌ Migration failed:", error.message);
       process.exit(1);
     });
 }
 
-export { populateInitialData };
+export { populatePostgresData };
