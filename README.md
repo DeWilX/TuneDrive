@@ -89,9 +89,14 @@ PRIVATE_OBJECT_DIR=/bucket/private
 2. Create a new database
 3. Update the `.env` file with your local credentials
 
+<<<<<<< HEAD
 ### 5. Initialize Database Schema and Data
 
 #### Step 1: Push the database schema
+=======
+### 5. Initialize Database Schema
+
+>>>>>>> 8dff3efa3d7a507486abce63cdb0a2891c194fbc
 Push the database schema to your PostgreSQL database:
 
 ```bash
@@ -103,6 +108,7 @@ This command will:
 - Set up relationships
 - Initialize the database structure
 
+<<<<<<< HEAD
 #### Step 2: Populate initial data
 Run the migration to populate your database with initial content:
 
@@ -122,6 +128,8 @@ This migration will populate:
 
 **Important**: Change the default admin password immediately after first login for security.
 
+=======
+>>>>>>> 8dff3efa3d7a507486abce63cdb0a2891c194fbc
 ### 6. Start Development Server
 
 ```bash
