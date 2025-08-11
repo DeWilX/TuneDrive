@@ -89,8 +89,9 @@ PRIVATE_OBJECT_DIR=/bucket/private
 2. Create a new database
 3. Update the `.env` file with your local credentials
 
-### 5. Initialize Database Schema
+### 5. Initialize Database Schema and Data
 
+#### Step 1: Push the database schema
 Push the database schema to your PostgreSQL database:
 
 ```bash
@@ -101,6 +102,25 @@ This command will:
 - Create all necessary tables
 - Set up relationships
 - Initialize the database structure
+
+#### Step 2: Populate initial data
+Run the migration to populate your database with initial content:
+
+```bash
+node run-migration.js
+```
+
+This migration will populate:
+- **Site Identity**: Company branding, colors, and hero statistics
+- **Navigation**: Main menu items with multilingual support
+- **Services**: Complete service catalog (Stage 1/2 Chiptuning, EGR/DPF removal)
+- **ZBOX Content**: Tuning device information with translations
+- **Why Choose Us**: Features and workshop information
+- **Contact Information**: Centralized contact details
+- **Sample Vehicles**: Popular car models with power specifications
+- **Admin Account**: Default admin user (username: `admin`, password: `admin123`)
+
+**Important**: Change the default admin password immediately after first login for security.
 
 ### 6. Start Development Server
 
