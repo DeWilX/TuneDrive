@@ -68,7 +68,7 @@ PGDATABASE=your_database_name
 JWT_SECRET=your_super_secure_jwt_secret_key_here
 
 # CareEcu API Configuration
-CARECU_API_KEY=5c78cfd1ca4ff97888f564558177b3e7
+CARECU_API_KEY=CARECU_API
 CARECU_API_BASE_URL=https://api.carecusoft.com
 
 # Optional: Object Storage (if using file uploads)
